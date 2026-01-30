@@ -1,0 +1,120 @@
+[0m[0m
+[0m[4mC:\Users\User\restaurante-pos\src\App.jsx[24m[0m
+[0m  [2m29:7[22m  [31merror[39m  Error: Calling setState synchronously within an effect can trigger cascading renders[0m
+[0m[0m
+[0mEffects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:[0m
+[0m* Update external systems with the latest state from React.[0m
+[0m* Subscribe for updates from some external system, calling setState in a callback function when external state changes.[0m
+[0m[0m
+[0mCalling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).[0m
+[0m[0m
+[0m  27 |   useEffect(() => {[0m
+[0m  28 |     if (isDesktop) {[0m
+[0m> 29 |       setSidebarOpen(false);[0m
+[0m     |       ^^^^^^^^^^^^^^ Avoid calling setState() directly within an effect[0m
+[0m  30 |     }[0m
+[0m  31 |   }, [isDesktop]);[0m
+[0m  32 |  [2mreact-hooks/set-state-in-effect[22m[0m
+[0m[0m
+[0m[4mC:\Users\User\restaurante-pos\src\components\Toast.jsx[24m[0m
+[0m  [2m7:14[22m  [31merror[39m  Fast refresh only works when a file only exports components. Use a new file to share constants or functions between components  [2mreact-refresh/only-export-components[22m[0m
+[0m[0m
+[0m[4mC:\Users\User\restaurante-pos\src\modules\auth\AuthContext.jsx[24m[0m
+[0m  [2m6:14[22m  [31merror[39m  Fast refresh only works when a file only exports components. Use a new file to share constants or functions between components  [2mreact-refresh/only-export-components[22m[0m
+[0m[0m
+[0m[4mC:\Users\User\restaurante-pos\src\modules\caja\Pagos.jsx[24m[0m
+[0m  [2m228:42[22m  [31merror[39m  'Icon' is defined but never used  [2mno-unused-vars[22m[0m
+[0m[0m
+[0m[4mC:\Users\User\restaurante-pos\src\modules\caja\components\ModalDetallePago.jsx[24m[0m
+[0m  [2m202:27[22m  [31merror[39m  'Icon' is defined but never used  [2mno-unused-vars[22m[0m
+[0m[0m
+[0m[4mC:\Users\User\restaurante-pos\src\modules\dashboard\Dashboard.jsx[24m[0m
+[0m  [2m23:6[22m   [33mwarning[39m  React Hook useEffect has a missing dependency: 'cargarEstadisticas'. Either include it or remove the dependency array  [2mreact-hooks/exhaustive-deps[22m[0m
+[0m  [2m57:43[22m  [31merror[39m    'Icon' is defined but never used                                                                                       [2mno-unused-vars[22m[0m
+[0m[0m
+[0m[4mC:\Users\User\restaurante-pos\src\modules\pedidos\Pedidos.jsx[24m[0m
+[0m   [2m35:23[22m  [31merror[39m    'isTablet' is assigned a value but never used. Allowed unused vars must match /^[A-Z_]/u                            [2mno-unused-vars[22m[0m
+[0m  [2m104:8[22m   [33mwarning[39m  React Hook useEffect has a missing dependency: 'cargarProductos'. Either include it or remove the dependency array  [2mreact-hooks/exhaustive-deps[22m[0m
+[0m[0m
+[0m[4mC:\Users\User\restaurante-pos\src\modules\pedidos\components\ModalEditarPedido.jsx[24m[0m
+[0m   [2m34:8[22m   [33mwarning[39m  React Hook useEffect has a missing dependency: 'cargarDatosPedido'. Either include it or remove the dependency array  [2mreact-hooks/exhaustive-deps[22m[0m
+[0m  [2m135:31[22m  [31merror[39m    'costoTaper' is assigned a value but never used. Allowed unused vars must match /^[A-Z_]/u                            [2mno-unused-vars[22m[0m
+[0m[0m
+[0m[4mC:\Users\User\restaurante-pos\src\modules\pedidos\components\ModalNuevoPedido.jsx[24m[0m
+[0m   [2m18:46[22m  [31merror[39m    'Icon' is assigned a value but never used                                                                                                [2mno-unused-vars[22m[0m
+[0m   [2m56:27[22m  [31merror[39m    'setMontoRecibido' is assigned a value but never used. Allowed unused vars must match /^[A-Z_]/u                                         [2mno-unused-vars[22m[0m
+[0m   [2m64:23[22m  [31merror[39m    'isTablet' is assigned a value but never used. Allowed unused vars must match /^[A-Z_]/u                                                 [2mno-unused-vars[22m[0m
+[0m   [2m77:8[22m   [33mwarning[39m  React Hook useEffect has missing dependencies: 'cargarDatosEdicion' and 'isEditing'. Either include them or remove the dependency array  [2mreact-hooks/exhaustive-deps[22m[0m
+[0m  [2m346:33[22m  [31merror[39m    Duplicate key 'border'                                                                                                                   [2mno-dupe-keys[22m[0m
+[0m[0m
+[0m[4mC:\Users\User\restaurante-pos\src\modules\pedidos\components\ModalPedidoMesa.jsx[24m[0m
+[0m  [2m23:8[22m  [33mwarning[39m  React Hook useEffect has a missing dependency: 'cargarPedido'. Either include it or remove the dependency array  [2mreact-hooks/exhaustive-deps[22m[0m
+[0m[0m
+[0m[4mC:\Users\User\restaurante-pos\src\modules\pedidos\components\ModalPersonalizarProducto.jsx[24m[0m
+[0m  [2m3:27[22m  [31merror[39m  'useEffect' is defined but never used. Allowed unused vars must match /^[A-Z_]/u  [2mno-unused-vars[22m[0m
+[0m[0m
+[0m[4mC:\Users\User\restaurante-pos\src\modules\pedidos\components\PanelLateralPedido.jsx[24m[0m
+[0m   [2m9:10[22m   [31merror[39m  'supabase' is defined but never used. Allowed unused vars must match /^[A-Z_]/u  [2mno-unused-vars[22m[0m
+[0m  [2m12:100[22m  [31merror[39m  'onTogglePago' is defined but never used                                         [2mno-unused-vars[22m[0m
+[0m[0m
+[0m[4mC:\Users\User\restaurante-pos\src\modules\pedidos\components\PedidoCard.jsx[24m[0m
+[0m  [2m10:9[22m  [31merror[39m  'estadoNormalizado' is assigned a value but never used. Allowed unused vars must match /^[A-Z_]/u  [2mno-unused-vars[22m[0m
+[0m[0m
+[0m[4mC:\Users\User\restaurante-pos\src\modules\pedidos\components\PedidoRow.jsx[24m[0m
+[0m  [2m15:73[22m  [31merror[39m  'onEditar' is defined but never used    [2mno-unused-vars[22m[0m
+[0m  [2m15:83[22m  [31merror[39m  'onImprimir' is defined but never used  [2mno-unused-vars[22m[0m
+[0m[0m
+[0m[4mC:\Users\User\restaurante-pos\src\modules\pedidos\components\VistaMesas.jsx[24m[0m
+[0m   [2m17:51[22m  [31merror[39m    'onOrdenSinMesa' is defined but never used                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        [2mno-unused-vars[22m[0m
+[0m   [2m21:23[22m  [31merror[39m    'isTablet' is assigned a value but never used. Allowed unused vars must match /^[A-Z_]/u                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          [2mno-unused-vars[22m[0m
+[0m   [2m28:9[22m   [31merror[39m    Error: Cannot access variable before it is declared[0m
+[0m[0m
+[0m`cargarMesas` is accessed before it is declared, which prevents the earlier access from updating when this value changes over time.[0m
+[0m[0m
+[0m  26 |[0m
+[0m  27 |     useEffect(() => {[0m
+[0m> 28 |         cargarMesas();[0m
+[0m     |         ^^^^^^^^^^^ `cargarMesas` accessed before it is declared[0m
+[0m  29 |[0m
+[0m  30 |         // Suscripción Realtime[0m
+[0m  31 |         const subscription = supabase[0m
+[0m[0m
+[0m  50 |     }, [restauranteId, modoEdicion]);[0m
+[0m  51 |[0m
+[0m> 52 |     const cargarMesas = async () => {[0m
+[0m     |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^[0m
+[0m> 53 |         const { data, error } = await getSalas(restauranteId);[0m
+[0m     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^[0m
+[0m> 54 |         if (error) {[0m
+[0m     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^[0m
+[0m> 55 |             console.error(error);[0m
+[0m     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^[0m
+[0m> 56 |             showToast('Error cargando mesas', 'error');[0m
+[0m     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^[0m
+[0m> 57 |         } else {[0m
+[0m     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^[0m
+[0m> 58 |             setSalas(data || []);[0m
+[0m     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^[0m
+[0m> 59 |         }[0m
+[0m     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^[0m
+[0m> 60 |         setLoading(false);[0m
+[0m     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^[0m
+[0m> 61 |     };[0m
+[0m     | ^^^^^^^ `cargarMesas` is declared here[0m
+[0m  62 |[0m
+[0m  63 |     // --- CRUD SALAS ---[0m
+[0m  64 |     const handleCrearSala = async () => {  [2mreact-hooks/immutability[22m[0m
+[0m   [2m50:8[22m   [33mwarning[39m  React Hook useEffect has a missing dependency: 'cargarMesas'. Either include it or remove the dependency array                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    [2mreact-hooks/exhaustive-deps[22m[0m
+[0m  [2m374:55[22m  [31merror[39m    'isMobile' is defined but never used                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              [2mno-unused-vars[22m[0m
+[0m[0m
+[0m[4mC:\Users\User\restaurante-pos\src\modules\pedidos\components\VistaMesasSelector.jsx[24m[0m
+[0m  [2m13:8[22m  [33mwarning[39m  React Hook useEffect has a missing dependency: 'cargarMesas'. Either include it or remove the dependency array  [2mreact-hooks/exhaustive-deps[22m[0m
+[0m[0m
+[0m[4mC:\Users\User\restaurante-pos\src\modules\pedidos\hooks\usePedidos.js[24m[0m
+[0m  [2m200:6[22m  [33mwarning[39m  React Hook useEffect has a missing dependency: 'cargarPedidos'. Either include it or remove the dependency array  [2mreact-hooks/exhaustive-deps[22m[0m
+[0m[0m
+[0m[4mC:\Users\User\restaurante-pos\src\modules\productos\Productos.jsx[24m[0m
+[0m  [2m33:8[22m  [33mwarning[39m  React Hook useEffect has a missing dependency: 'cargarDatos'. Either include it or remove the dependency array  [2mreact-hooks/exhaustive-deps[22m[0m
+[0m[0m
+[0m[31m[1m✖ 31 problems (22 errors, 9 warnings)[22m[39m[0m
+[0m[31m[1m[22m[39m[0m
