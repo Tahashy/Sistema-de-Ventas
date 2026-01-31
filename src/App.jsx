@@ -53,6 +53,13 @@ function AppLayout() {
     setSidebarOpen(false);
   }, [location.pathname]);
 
+  // Handle logout redirect
+  useEffect(() => {
+    if (!isAuthenticated) {
+      navigate('/');
+    }
+  }, [isAuthenticated, navigate]);
+
   if (!isAuthenticated) {
     return <Login />;
   }
