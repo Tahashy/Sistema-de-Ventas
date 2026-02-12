@@ -101,6 +101,13 @@ const Pagos = ({ restauranteId }) => {
                     icon={Smartphone}
                     color="#d946ef"
                 />
+                <StatsCard
+                    title="Bebidas"
+                    value={estadisticas?.totalBebidas || 0}
+                    icon={ShoppingBag}
+                    color="#FF6B35"
+                    subtext="Unidades vendidas"
+                />
             </div>
 
             {/* Filters & Actions Bar */}

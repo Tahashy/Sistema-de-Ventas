@@ -104,6 +104,7 @@ export const obtenerEstadisticas = async (restauranteId, fechaInicio, fechaFin) 
             cantidadPedidos: data.length,
             ticketPromedio: 0,
             totalPropinas: 0,
+            totalBebidas: 0,
             porMetodoPago: {
                 efectivo: 0,
                 tarjeta: 0,
@@ -118,6 +119,32 @@ export const obtenerEstadisticas = async (restauranteId, fechaInicio, fechaFin) 
                 domicilio: 0
             }
         };
+
+        // Obtener total de bebidas vendidas en el periodo
+        const { data: dataBebidas } = await supabase
+            .from('pedido_items')
+            .select(`
+                cantidad,
+                productos!inner (
+                    categorias!inner (
+                        nombre
+                    )
+                ),
+                pedidos!inner (
+                    restaurante_id,
+                    estado,
+                    fecha_finalizacion
+                )
+            `)
+            .eq('pedidos.restaurante_id', restauranteId)
+            .eq('pedidos.estado', 'entregado')
+            .gte('pedidos.fecha_finalizacion', fechaInicio)
+            .lte('pedidos.fecha_finalizacion', fechaFin)
+            .ilike('productos.categorias.nombre', 'Bebidas');
+
+        if (dataBebidas) {
+            estadisticas.totalBebidas = dataBebidas.reduce((sum, item) => sum + (item.cantidad || 0), 0);
+        }
 
         data.forEach(pedido => {
             estadisticas.totalVentas += parseFloat(pedido.total || 0);
