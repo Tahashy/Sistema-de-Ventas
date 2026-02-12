@@ -120,11 +120,11 @@ export const obtenerEstadisticas = async (restauranteId, fechaInicio, fechaFin) 
             }
         };
 
-        // Obtener total de bebidas vendidas en el periodo
+        // Obtener total de bebidas vendidas en el periodo (en dinero)
         const { data: dataBebidas } = await supabase
             .from('pedido_items')
             .select(`
-                cantidad,
+                subtotal,
                 productos!inner (
                     categorias!inner (
                         nombre
@@ -143,7 +143,7 @@ export const obtenerEstadisticas = async (restauranteId, fechaInicio, fechaFin) 
             .ilike('productos.categorias.nombre', 'Bebidas');
 
         if (dataBebidas) {
-            estadisticas.totalBebidas = dataBebidas.reduce((sum, item) => sum + (item.cantidad || 0), 0);
+            estadisticas.totalBebidas = dataBebidas.reduce((sum, item) => sum + parseFloat(item.subtotal || 0), 0);
         }
 
         data.forEach(pedido => {

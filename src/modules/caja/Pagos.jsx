@@ -103,10 +103,10 @@ const Pagos = ({ restauranteId }) => {
                 />
                 <StatsCard
                     title="Bebidas"
-                    value={estadisticas?.totalBebidas || 0}
+                    value={formatearMoneda(estadisticas?.totalBebidas || 0)}
                     icon={ShoppingBag}
                     color="#FF6B35"
-                    subtext="Unidades vendidas"
+                    subtext="Total recaudado"
                 />
             </div>
 
