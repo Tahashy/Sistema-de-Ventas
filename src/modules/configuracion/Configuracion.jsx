@@ -16,7 +16,8 @@ import {
     Printer,
     Image as ImageIcon,
     Upload,
-    Type
+    Type,
+    Package
 } from 'lucide-react';
 import { showToast } from '../../components/Toast';
 import {
@@ -27,6 +28,7 @@ import {
 import { useAuth } from '../auth/AuthContext';
 import { useLanguage } from './LanguageContext';
 import { changePassword } from '../../services/seguridadService';
+import ConfiguracionImpresoras from './components/ConfiguracionImpresoras';
 
 const Configuracion = ({ restauranteId }) => {
     const [activeTab, setActiveTab] = useState('general');
@@ -768,6 +770,7 @@ const Configuracion = ({ restauranteId }) => {
                 {[
                     { id: 'general', label: t('general'), icon: Settings },
                     { id: 'preferencias', label: t('preferencias'), icon: Printer },
+                    { id: 'hardware', label: 'Impresoras', icon: Package },
                     { id: 'horarios', label: t('horarios'), icon: Clock },
                     { id: 'usuarios', label: t('usuarios'), icon: Users },
                     { id: 'seguridad', label: t('seguridad'), icon: Shield }
@@ -787,6 +790,7 @@ const Configuracion = ({ restauranteId }) => {
             <div className="tab-content">
                 {activeTab === 'general' && renderGeneral()}
                 {activeTab === 'preferencias' && renderPreferencias()}
+                {activeTab === 'hardware' && <ConfiguracionImpresoras />}
                 {activeTab === 'horarios' && renderHorarios()}
                 {activeTab === 'usuarios' && renderUsuarios()}
                 {activeTab === 'seguridad' && renderSeguridad()}

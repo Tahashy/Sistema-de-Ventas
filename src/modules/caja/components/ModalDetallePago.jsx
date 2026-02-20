@@ -1,34 +1,51 @@
-// src/modules/caja/components/ModalDetallePago.jsx
-
-import React, { useRef, useState } from 'react';
-import { X, Printer, CreditCard, DollarSign, Calendar, User, ShoppingBag } from 'lucide-react';
-import { formatearMoneda, formatearFechaHora } from '../../pedidos/utils/pedidoHelpers';
-import TicketImpresion from '../../pedidos/components/TicketImpresion';
-import useImpresora from '../../../hooks/useImpresora';
+import { impresionService } from '../../../services/impresionService';
+import { impresorasService } from '../../../services/impresorasService';
 
 const ModalDetallePago = ({ pedido, onClose }) => {
     if (!pedido) return null;
 
-    const ticketRef = useRef();
-    const { imprimir } = useImpresora();
-    const [tipoImpresion, setTipoImpresion] = useState('cliente');
+    const [imprimiendo, setImprimiendo] = useState(false);
 
-    // Mismo restaurante placeholder si no viene uno real, 
-    // idealmente debería venir como prop o usar context
-    const restaurantePlaceholder = {
-        nombre: 'Restaurante',
-        direccion: 'Dirección Principal',
-        telefono: '999-999-999'
+    const handlePrintCocina = async () => {
+        setImprimiendo(true);
+        try {
+            const impresoras = impresorasService.getImpresorasPorTipo('cocina');
+            if (impresoras.length === 0) {
+                showToast('No hay impresoras de cocina configuradas', 'warning');
+                return;
+            }
+
+            const ops = impresionService.formatearComanda(pedido);
+            for (const imp of impresoras) {
+                await impresionService.enviarAlPlugin(ops, imp.ip);
+            }
+            showToast('Comanda enviada a cocina', 'success');
+        } catch (error) {
+            showToast(error.message, 'error');
+        } finally {
+            setImprimiendo(false);
+        }
     };
 
-    const handlePrintCocina = () => {
-        setTipoImpresion('cocina');
-        setTimeout(() => imprimir(ticketRef), 100);
-    };
+    const handlePrintRecibo = async () => {
+        setImprimiendo(true);
+        try {
+            const impresoras = impresorasService.getImpresorasPorTipo('caja');
+            if (impresoras.length === 0) {
+                showToast('No hay impresoras de caja configuradas', 'warning');
+                return;
+            }
 
-    const handlePrintRecibo = () => {
-        setTipoImpresion('cliente');
-        setTimeout(() => imprimir(ticketRef), 100);
+            const ops = impresionService.formatearTicket(pedido);
+            for (const imp of impresoras) {
+                await impresionService.enviarAlPlugin(ops, imp.ip);
+            }
+            showToast('Recibo impreso', 'success');
+        } catch (error) {
+            showToast(error.message, 'error');
+        } finally {
+            setImprimiendo(false);
+        }
     };
 
     return (
@@ -211,15 +228,7 @@ const ModalDetallePago = ({ pedido, onClose }) => {
             </div>
 
 
-            {/* Componente oculto para impresión */}
-            <div style={{ display: 'none' }}>
-                <TicketImpresion
-                    ref={ticketRef}
-                    pedido={pedido}
-                    restaurante={restaurantePlaceholder}
-                    tipoImpresion={tipoImpresion}
-                />
-            </div>
+            {/* Componente oculto para impresión - REMOVIDO POR QZ TRAY */}
         </div >
     );
 };

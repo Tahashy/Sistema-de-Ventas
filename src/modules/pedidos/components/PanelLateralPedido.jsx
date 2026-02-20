@@ -1,16 +1,7 @@
-// src/modules/pedidos/components/PanelLateralPedido.jsx
-
-import React, { useState, useRef } from 'react';
-import ReactDOM from 'react-dom';
-import { X, Printer, Edit, Clock, CheckCircle, AlertCircle, Package as PackageIcon } from 'lucide-react';
-import { getEstadoColor, generarLinkWhatsapp } from '../utils/pedidoHelpers';
-import DropdownButton from './DropdownButton';
-import TicketImpresion from './TicketImpresion';
-import { showToast } from '../../../components/Toast';
+import { impresionService } from '../../../services/impresionService';
+import { impresorasService } from '../../../services/impresorasService';
 
 const PanelLateralPedido = ({ pedido, restaurante, onClose, onCambiarEstado, onEditar, onEliminar, isAdmin }) => {
-    const [vistaImpresion, setVistaImpresion] = useState(null);
-    const componentRef = useRef();
     const isMobile = window.innerWidth < 768;
 
     const getTipoIcon = (tipo) => {
@@ -22,33 +13,27 @@ const PanelLateralPedido = ({ pedido, restaurante, onClose, onCambiarEstado, onE
         return icons[tipo] || '🛒';
     };
 
-    const handleImprimir = (tipo) => {
-        // Establecer tipo para renderizar el ticket correcto
-        setVistaImpresion(tipo);
+    const handleImprimir = async (tipo) => {
+        try {
+            const tipoImpresion = tipo === 'cocina' ? 'cocina' : 'caja';
+            const impresoras = impresorasService.getImpresorasPorTipo(tipoImpresion);
 
-        // Esperar render
-        setTimeout(() => {
-            if (componentRef.current) {
-                const printContent = componentRef.current.innerHTML;
-                const windowUrl = 'about:blank';
-                const uniqueName = new Date().getTime();
-                const windowName = 'Print' + uniqueName;
-                const printWindow = window.open(windowUrl, windowName, 'left=50000,top=50000,width=0,height=0');
-
-                if (printWindow) {
-                    printWindow.document.write(printContent);
-                    printWindow.document.close();
-                    printWindow.focus();
-                    setTimeout(() => {
-                        printWindow.print();
-                        printWindow.close();
-                        setVistaImpresion(null);
-                    }, 250);
-                } else {
-                    showToast('Habilita popups para imprimir', 'warning');
-                }
+            if (impresoras.length === 0) {
+                showToast(`No hay impresoras de ${tipoImpresion} configuradas`, 'warning');
+                return;
             }
-        }, 100);
+
+            const ops = tipo === 'cocina'
+                ? impresionService.formatearComanda(pedido)
+                : impresionService.formatearTicket(pedido, { empresa: restaurante?.nombre });
+
+            for (const imp of impresoras) {
+                await impresionService.enviarAlPlugin(ops, imp.ip);
+            }
+            showToast('Impresión enviada', 'success');
+        } catch (error) {
+            showToast(error.message, 'error');
+        }
     };
 
 
