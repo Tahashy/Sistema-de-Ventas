@@ -6,15 +6,17 @@ import { supabase } from './supabaseClient';
  */
 export const obtenerSiguienteCorrelativo = async (restauranteId) => {
     try {
-        // Obtenemos hoy en Lima
-        const hoyLima = new Intl.DateTimeFormat('sv-SE', {
-            timeZone: 'America/Lima',
-            year: 'numeric',
-            month: '2-digit',
-            day: '2-digit'
-        }).format(new Date());
+        // Obtenemos el inicio del día en Lima (UTC-5)
+        // Calculamos la fecha actual en Lima
+        const ahora = new Date();
+        const limaOffset = -5;
+        const horaLima = new Date(ahora.getTime() + (limaOffset * 60 * 60 * 1000) + (ahora.getTimezoneOffset() * 60 * 1000));
 
-        const inicioUTC = new Date(hoyLima + 'T00:00:00').toISOString();
+        // Formateamos YYYY-MM-DD del día en Lima
+        const fechaLima = horaLima.toISOString().split('T')[0];
+
+        // El inicio del día en Lima (00:00:00) es las 05:00:00 UTC
+        const inicioUTC = `${fechaLima}T05:00:00.000Z`;
 
         const { count, error } = await supabase
             .from('pedidos')

@@ -195,14 +195,19 @@ const PanelLateralPedido = ({ pedido, restaurante, onClose, onCambiarEstado, onE
                         marginBottom: '16px'
                     }}>
                         <div style={{ flex: 1 }}>
-                            <h2 style={{
-                                margin: '0 0 8px 0',
-                                fontSize: '24px',
-                                fontWeight: '700',
-                                color: '#1a202c'
-                            }}>
-                                Pedido #{pedido.numero_pedido}
-                            </h2>
+                            <div style={{ display: 'flex', alignItems: 'baseline', gap: '10px' }}>
+                                <h2 style={{
+                                    margin: '0',
+                                    fontSize: '28px',
+                                    fontWeight: '800',
+                                    color: '#1a202c'
+                                }}>
+                                    ORDEN #{pedido.orden_dia || '-'}
+                                </h2>
+                                <span style={{ fontSize: '14px', color: '#718096' }}>
+                                    (ID: {pedido.numero_pedido})
+                                </span>
+                            </div>
                             <div style={{
                                 display: 'flex',
                                 alignItems: 'center',

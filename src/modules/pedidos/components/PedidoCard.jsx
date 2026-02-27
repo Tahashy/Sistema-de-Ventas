@@ -54,14 +54,14 @@ const PedidoCard = ({ pedido, onCambiarEstado, onVerDetalle, onImprimir, onEdita
               {pedido.tipo}
             </span>
           </div>
-          <p style={{
-            margin: '0 0 4px 0',
-            fontSize: '16px',
-            fontWeight: '700',
-            color: '#1a202c'
-          }}>
-            #{pedido.numero_pedido}
-          </p>
+          <div style={{ display: 'flex', alignItems: 'baseline', gap: '8px', marginBottom: '4px' }}>
+            <p style={{ margin: 0, fontSize: '18px', fontWeight: '800', color: '#1F2937' }}>
+              #{pedido.orden_dia || '-'}
+            </p>
+            <p style={{ margin: 0, fontSize: '13px', color: '#718096' }}>
+              (ID: {pedido.numero_pedido})
+            </p>
+          </div>
           <p style={{
             margin: 0,
             fontSize: '13px',

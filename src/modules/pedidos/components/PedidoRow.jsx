@@ -35,9 +35,14 @@ const PedidoRow = ({ pedido, onCambiarEstado, onVerDetalle, onEliminar, onToggle
       onMouseOut={(e) => e.currentTarget.style.background = 'transparent'}
     >
       <td style={tdStyle}>
-        <span style={{ fontWeight: '700', color: '#1a202c' }}>
-          #{pedido.numero_pedido}
-        </span>
+        <div style={{ display: 'flex', flexDirection: 'column' }}>
+          <span style={{ fontWeight: '800', color: '#1a202c', fontSize: '15px' }}>
+            #{pedido.orden_dia || '-'}
+          </span>
+          <span style={{ fontSize: '11px', color: '#718096' }}>
+            ID: {pedido.numero_pedido}
+          </span>
+        </div>
       </td>
       <td style={tdStyle}>
         <div style={{

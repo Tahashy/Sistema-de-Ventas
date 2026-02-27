@@ -282,6 +282,7 @@ const ModalNuevoPedido = ({ restauranteId, restaurante = { nombre: 'Restaurante'
                     ...pedidoData,
                     id: pedidoId,
                     numero_pedido: pedidoData.numero_pedido || 'Nuevo',
+                    orden_dia: pedidoData.orden_dia,
                     pedido_items: carrito,
                     created_at: new Date().toISOString()
                 };
@@ -789,7 +790,8 @@ const ModalNuevoPedido = ({ restauranteId, restaurante = { nombre: 'Restaurante'
                             <CheckCircle size={48} color="#10B981" />
                         </div>
                         <h2 style={{ fontSize: '24px', fontWeight: '800', color: '#065F46', marginBottom: '8px' }}>¡Pedido Creado!</h2>
-                        <p style={{ color: '#6B7280', marginBottom: '32px' }}>El pedido #{pedidoConfirmado.numero_pedido} se ha registrado correctamente.</p>
+                        <p style={{ color: '#1F2937', fontSize: '20px', fontWeight: 'bold', marginBottom: '8px' }}>ORDEN: #{pedidoConfirmado.orden_dia || '-'}</p>
+                        <p style={{ color: '#6B7280', marginBottom: '32px' }}>El pedido ID: #{pedidoConfirmado.numero_pedido} se ha registrado correctamente.</p>
 
                         <div style={{ display: 'flex', gap: '16px', width: '100%', maxWidth: '400px', flexDirection: 'column' }}>
                             <button
