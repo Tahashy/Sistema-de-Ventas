@@ -67,8 +67,9 @@ export const impresionService = {
         let data = "";
         data += char.init;
         data += char.center + char.boldOn + (opciones.empresa || 'MIRKOS').toUpperCase() + "\n" + char.boldOff;
-        data += "Pedido #" + pedido.numero_pedido + "\n";
-        data += "Fecha: " + new Date(pedido.created_at).toLocaleString() + "\n";
+        data += char.boldOn + "ORDEN #" + (pedido.orden_dia || '-') + char.boldOff + "\n";
+        data += "ID: #" + pedido.numero_pedido + "\n";
+        data += "Fecha: " + new Date(pedido.created_at).toLocaleString('es-PE', { timeZone: 'America/Lima' }) + "\n";
         data += "--------------------------------\n";
 
         data += char.left;
@@ -112,7 +113,8 @@ export const impresionService = {
         let data = "";
         data += char.init;
         data += char.center + char.boldOn + "*** COMANDA DE COCINA ***\n" + char.boldOff;
-        data += char.doubleH + "PEDIDO #" + pedido.numero_pedido + char.normal + "\n";
+        data += char.doubleH + "ORDEN #" + (pedido.orden_dia || '-') + char.normal + "\n";
+        data += "Pedido #" + pedido.numero_pedido + "\n";
 
         if (pedido.numero_mesa) {
             data += "MESA: " + pedido.numero_mesa + "\n";

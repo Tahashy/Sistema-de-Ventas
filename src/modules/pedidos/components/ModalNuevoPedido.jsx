@@ -13,6 +13,7 @@ import ModalPersonalizarProducto from './ModalPersonalizarProducto';
 import TicketImpresion from './TicketImpresion';
 import VistaMesasSelector from './VistaMesasSelector';
 import { ocuparMesa } from '../../../services/mesasService';
+import { obtenerSiguienteCorrelativo } from '../../../services/pedidosService';
 import useWindowSize from '../../../hooks/useWindowSize';
 import useImpresora from '../../../hooks/useImpresora';
 import SelectorUbicacion from './SelectorUbicacion';
@@ -227,6 +228,14 @@ const ModalNuevoPedido = ({ restauranteId, restaurante = { nombre: 'Restaurante'
                 pedidoData.numero_pedido = generarNumeroPedido();
                 pedidoData.usuario_id = userId;
                 pedidoData.estado = 'pendiente';
+
+                // Obtener correlativo diario
+                try {
+                    const correlativo = await obtenerSiguienteCorrelativo(restauranteId);
+                    pedidoData.orden_dia = correlativo;
+                } catch (corrError) {
+                    console.error('Error al obtener correlativo:', corrError);
+                }
 
                 const { data: newPedido, error } = await supabase
                     .from('pedidos')

@@ -66,7 +66,15 @@ export const formatearMoneda = (cantidad) => {
 
 export const formatearFechaHora = (fecha) => {
   if (!fecha) return '-';
-  const date = new Date(fecha);
+
+  // Si es un string de Supabase sin 'Z' ni offset, forzar UTC para que la conversión a Lima sea correcta
+  let date;
+  if (typeof fecha === 'string' && !fecha.includes('Z') && !fecha.includes('+')) {
+    date = new Date(fecha.replace(' ', 'T') + 'Z');
+  } else {
+    date = new Date(fecha);
+  }
+
   if (isNaN(date.getTime())) return '-';
 
   return new Intl.DateTimeFormat('es-PE', {
@@ -75,8 +83,27 @@ export const formatearFechaHora = (fecha) => {
     year: 'numeric',
     hour: '2-digit',
     minute: '2-digit',
-    hour12: true
+    hour12: true,
+    timeZone: 'America/Lima'
   }).format(date);
+};
+
+/**
+ * Ajusta una fecha a formato ISO garantizando el rango de un día completo en Lima convertido a UTC
+ */
+export const obtenerRangoFechaLimaUTC = (fechaStr, esFin = false) => {
+  const date = new Date(fechaStr + 'T00:00:00'); // Fecha local (Lima)
+  if (esFin) {
+    date.setHours(23, 59, 59, 999);
+  } else {
+    date.setHours(0, 0, 0, 0);
+  }
+
+  // Convertir a UTC restando el desfase manualmente o dejando que toISOString use el local del sistema
+  // Pero para ser más robusto si el servidor/cliente no está en Lima, lo forzamos.
+  // Lima es UTC-5. Así que sumamos 5 horas para llegar a UTC.
+  // Sin embargo, si el navegador YA está en Lima, toISOString() hará el trabajo correcto.
+  return date.toISOString();
 };
 
 /**

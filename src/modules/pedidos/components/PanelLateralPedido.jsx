@@ -1,5 +1,6 @@
 import { impresionService } from '../../../services/impresionService';
 import { impresorasService } from '../../../services/impresorasService';
+import { formatearFechaHora } from '../utils/pedidoHelpers';
 
 const PanelLateralPedido = ({ pedido, restaurante, onClose, onCambiarEstado, onEditar, onEliminar, isAdmin }) => {
     const isMobile = window.innerWidth < 768;
@@ -412,10 +413,7 @@ const PanelLateralPedido = ({ pedido, restaurante, onClose, onCambiarEstado, onE
                             <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                                 <span style={{ fontSize: '14px', color: '#718096' }}>Hora:</span>
                                 <span style={{ fontSize: '14px', fontWeight: '600', color: '#1a202c' }}>
-                                    {new Date(pedido.created_at).toLocaleTimeString('es-ES', {
-                                        hour: '2-digit',
-                                        minute: '2-digit'
-                                    })}
+                                    {formatearFechaHora(pedido.created_at)}
                                 </span>
                             </div>
                         </div>

@@ -44,8 +44,11 @@ const TicketImpresion = forwardRef(({ pedido, restaurante, tipoImpresion = 'clie
 
                 {/* Info Pedido */}
                 <div style={{ marginBottom: '10px' }}>
-                    <p style={{ margin: '0 0 4px 0', fontSize: isCocina ? '18px' : '12px', fontWeight: 'bold' }}>
-                        Pedido: #{pedido.numero_pedido}
+                    <p style={{ margin: '0 0 4px 0', fontSize: isCocina ? '24px' : '14px', fontWeight: 'bold', color: isCocina ? 'black' : 'inherit' }}>
+                        ORDEN: #{pedido.orden_dia || '-'}
+                    </p>
+                    <p style={{ margin: '0 0 4px 0', fontSize: '12px' }}>
+                        ID: #{pedido.numero_pedido}
                     </p>
                     <p style={{ margin: '0 0 2px 0' }}>Fecha: {new Date().toLocaleString()}</p>
                     {!isCocina && <p style={{ margin: '0 0 2px 0' }}>Cliente: {pedido.cliente_nombre || 'General'}</p>}

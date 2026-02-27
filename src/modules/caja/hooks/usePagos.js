@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { obtenerPagos, obtenerEstadisticas, buscarPago, prepararDatosExportacion } from '../../../services/pagosService';
 import { showToast } from '../../../components/Toast';
+import { obtenerRangoFechaLimaUTC } from '../../pedidos/utils/pedidoHelpers';
 import * as XLSX from 'xlsx';
 
 export const usePagos = (restauranteId) => {
@@ -24,23 +25,20 @@ export const usePagos = (restauranteId) => {
         setLoading(true);
         try {
             // Cargar Pagos
-            const { data: dataPagos, error: errorPagos } = await obtenerPagos(restauranteId, filtros);
+            const { data: dataPagos, error: errorPagos } = await obtenerPagos(restauranteId, {
+                ...filtros,
+                fechaInicio: obtenerRangoFechaLimaUTC(filtros.fechaInicio),
+                fechaFin: obtenerRangoFechaLimaUTC(filtros.fechaFin, true)
+            });
             if (errorPagos) throw errorPagos;
 
             setPagos(dataPagos || []);
 
             // Cargar Estadísticas
-            // Ajustar fechas para incluir todo el día final (hasta 23:59:59)
-            const fechaFinAjustada = new Date(filtros.fechaFin);
-            fechaFinAjustada.setHours(23, 59, 59, 999);
-
-            const fechaInicioAjustada = new Date(filtros.fechaInicio);
-            fechaInicioAjustada.setHours(0, 0, 0, 0);
-
             const { data: dataStats, error: errorStats } = await obtenerEstadisticas(
                 restauranteId,
-                fechaInicioAjustada.toISOString(),
-                fechaFinAjustada.toISOString()
+                obtenerRangoFechaLimaUTC(filtros.fechaInicio),
+                obtenerRangoFechaLimaUTC(filtros.fechaFin, true)
             );
 
             if (errorStats) throw errorStats;

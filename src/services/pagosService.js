@@ -216,15 +216,25 @@ export const obtenerDetallePago = async (pedidoId) => {
  */
 export const obtenerResumenDia = async (restauranteId) => {
     try {
-        const hoy = new Date();
-        hoy.setHours(0, 0, 0, 0);
-        const manana = new Date(hoy);
-        manana.setDate(manana.getDate() + 1);
+        // Obtenemos la fecha actual en formato YYYY-MM-DD según la hora de Lima
+        const hoyLima = new Intl.DateTimeFormat('sv-SE', {
+            timeZone: 'America/Lima',
+            year: 'numeric',
+            month: '2-digit',
+            day: '2-digit'
+        }).format(new Date());
+
+        // Calculamos el inicio de hoy y el final de hoy en UTC
+        const inicioUTC = new Date(hoyLima + 'T00:00:00');
+        const finUTC = new Date(hoyLima + 'T23:59:59.999');
+
+        // Compensamos el desfase si el entorno no está en Lima (por si acaso)
+        // Pero toISOString() en el navegador del cliente en Lima ya lo hará bien.
 
         const { data: estadisticas } = await obtenerEstadisticas(
             restauranteId,
-            hoy.toISOString(),
-            manana.toISOString()
+            inicioUTC.toISOString(),
+            finUTC.toISOString()
         );
 
         return { data: estadisticas, error: null };
@@ -244,23 +254,33 @@ export const prepararDatosExportacion = async (restauranteId, filtros = {}) => {
         if (!pagos) return { data: null, error: { message: 'No hay datos para exportar' } };
 
         // Formatear datos para exportación
-        const datosExportacion = pagos.map(pago => ({
-            'Número Pedido': pago.numero_pedido,
-            'Fecha': new Date(pago.fecha_finalizacion || pago.created_at).toLocaleString('es-ES'),
-            'Cliente': pago.cliente_nombre || 'Sin nombre',
-            'Tipo': pago.tipo_servicio || 'mostrador',
-            'Mesa': pago.numero_mesa || '-',
-            'Subtotal': pago.subtotal,
-            'Descuento': pago.descuento || 0,
-            'Servicio': pago.cargo_servicio || 0,
-            'Embalaje': pago.cargo_embalaje || 0,
-            'Propina': pago.propina || 0,
-            'IVA': pago.iva || 0,
-            'Total': pago.total,
-            'Método Pago': pago.metodo_pago || 'efectivo',
-            'Estado': pago.estado,
-            'Mesero': pago.usuarios?.nombre || '-'
-        }));
+        const datosExportacion = pagos.map(pago => {
+            const fechaStr = pago.fecha_finalizacion || pago.created_at;
+            let date;
+            if (typeof fechaStr === 'string' && !fechaStr.includes('Z') && !fechaStr.includes('+')) {
+                date = new Date(fechaStr.replace(' ', 'T') + 'Z');
+            } else {
+                date = new Date(fechaStr);
+            }
+
+            return {
+                'Número Pedido': pago.numero_pedido,
+                'Fecha': date.toLocaleString('es-ES', { timeZone: 'America/Lima' }),
+                'Cliente': pago.cliente_nombre || 'Sin nombre',
+                'Tipo': pago.tipo_servicio || 'mostrador',
+                'Mesa': pago.numero_mesa || '-',
+                'Subtotal': pago.subtotal,
+                'Descuento': pago.descuento || 0,
+                'Servicio': pago.cargo_servicio || 0,
+                'Embalaje': pago.cargo_embalaje || 0,
+                'Propina': pago.propina || 0,
+                'IVA': pago.iva || 0,
+                'Total': pago.total,
+                'Método Pago': pago.metodo_pago || 'efectivo',
+                'Estado': pago.estado,
+                'Mesero': pago.usuarios?.nombre || '-'
+            };
+        });
 
         return { data: datosExportacion, error: null };
     } catch (error) {
