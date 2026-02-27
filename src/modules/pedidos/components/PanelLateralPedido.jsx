@@ -1,9 +1,19 @@
+import React, { useState, useRef } from 'react';
+import ReactDOM from 'react-dom';
+import {
+    X, Printer, Clock, AlertCircle, CheckCircle, Package, Edit
+} from 'lucide-react';
 import { impresionService } from '../../../services/impresionService';
 import { impresorasService } from '../../../services/impresorasService';
-import { formatearFechaHora } from '../utils/pedidoHelpers';
+import { formatearFechaHora, getEstadoColor, generarLinkWhatsapp } from '../utils/pedidoHelpers';
+import { showToast } from '../../../components/Toast';
+import DropdownButton from './DropdownButton';
+import TicketImpresion from './TicketImpresion';
 
 const PanelLateralPedido = ({ pedido, restaurante, onClose, onCambiarEstado, onEditar, onEliminar, isAdmin }) => {
     const isMobile = window.innerWidth < 768;
+    const componentRef = useRef();
+    const [vistaImpresion, setVistaImpresion] = useState('cliente');
 
     const getTipoIcon = (tipo) => {
         const icons = {
@@ -42,7 +52,7 @@ const PanelLateralPedido = ({ pedido, restaurante, onClose, onCambiarEstado, onE
         {
             label: 'Ticket Cocina',
             value: 'cocina',
-            icon: PackageIcon,
+            icon: Package,
             color: '#FF6B35'
         },
         {

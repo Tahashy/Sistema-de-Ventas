@@ -232,7 +232,9 @@ const ModalNuevoPedido = ({ restauranteId, restaurante = { nombre: 'Restaurante'
                 // Obtener correlativo diario
                 try {
                     const correlativo = await obtenerSiguienteCorrelativo(restauranteId);
-                    pedidoData.orden_dia = correlativo;
+                    if (correlativo) {
+                        pedidoData.orden_dia = correlativo;
+                    }
                 } catch (corrError) {
                     console.error('Error al obtener correlativo:', corrError);
                 }
