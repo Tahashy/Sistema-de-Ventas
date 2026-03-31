@@ -1,3 +1,7 @@
+import React, { useState } from 'react';
+import { Calendar, User, ShoppingBag, CreditCard, X, Printer } from 'lucide-react';
+import { showToast } from '../../../components/Toast';
+import { formatearMoneda, formatearFechaHora } from '../../pedidos/utils/pedidoHelpers';
 import { impresionService } from '../../../services/impresionService';
 import { impresorasService } from '../../../services/impresorasService';
 
