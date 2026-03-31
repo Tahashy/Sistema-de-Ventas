@@ -10,7 +10,7 @@ import {
 } from 'lucide-react';
 import { formatearMoneda, formatearFechaHora } from '../pedidos/utils/pedidoHelpers';
 
-const Pagos = ({ restauranteId }) => {
+const Pagos = ({ restauranteId, restaurante }) => {
     const {
         pagos,
         loading,
@@ -396,6 +396,7 @@ const Pagos = ({ restauranteId }) => {
             {pedidoSeleccionado && (
                 <ModalDetallePago
                     pedido={pedidoSeleccionado}
+                    restaurante={restaurante}
                     onClose={() => setPedidoSeleccionado(null)}
                 />
             )}

@@ -3,6 +3,7 @@
  * Proporciona una conexión estable vía Websockets y soporte para comandos RAW (ESC/POS).
  */
 import * as qz from 'qz-tray';
+import { formatearFechaHora } from '../modules/pedidos/utils/pedidoHelpers';
 
 export const impresionService = {
     /**
@@ -53,7 +54,6 @@ export const impresionService = {
      */
     formatearTicket: (pedido, opciones = {}) => {
         // Estructura de datos para QZ Tray (RAW commands)
-        // \x1B es el caracter ESC (decimal 27)
         const char = {
             init: '\x1B\x40',
             center: '\x1B\x61\x01',
@@ -64,20 +64,31 @@ export const impresionService = {
             cut: '\x1D\x56\x41\x03'
         };
 
+        const rest = opciones.restaurante || {};
+        const nombreEmpresa = (rest.nombre || 'RESTAURANTE').toUpperCase();
+        const direccion = rest.direccion || '';
+        const telefono = rest.telefono || '';
+
         let data = "";
         data += char.init;
-        data += char.center + char.boldOn + (opciones.empresa || 'MIRKOS').toUpperCase() + "\n" + char.boldOff;
+        data += char.center + char.boldOn + nombreEmpresa + "\n" + char.boldOff;
+        
+        if (direccion) data += direccion + "\n";
+        if (telefono) data += "Tel: " + telefono + "\n";
+        
+        data += "\n";
         data += char.boldOn + "ORDEN #" + (pedido.orden_dia || '-') + char.boldOff + "\n";
         data += "ID: #" + pedido.numero_pedido + "\n";
-        data += "Fecha: " + new Date(pedido.created_at).toLocaleString('es-PE', { timeZone: 'America/Lima' }) + "\n";
+        data += "Fecha: " + formatearFechaHora(pedido.created_at) + "\n";
+        data += "Cliente: " + (pedido.cliente_nombre || 'General') + "\n";
         data += "--------------------------------\n";
 
         data += char.left;
         (pedido.pedido_items || []).forEach(item => {
-            const nombre = (item.nombre || item.producto_nombre || 'Producto').substring(0, 20);
+            let nombreLimpio = (item.nombre || item.producto_nombre || 'Producto').substring(0, 20);
             const cant = item.cantidad.toString().padStart(2, ' ');
-            const precio = (parseFloat(item.precio || item.precio_unitario || 0) * item.cantidad).toFixed(2);
-            data += `${cant}x ${nombre.padEnd(20, ' ')} ${precio.padStart(7, ' ')}\n`;
+            const precio = (parseFloat(item.precio || item.precio_unitario || item.subtotal || 0) * (item.subtotal ? 1 : item.cantidad)).toFixed(2);
+            data += `${cant}x ${nombreLimpio.padEnd(20, ' ')} ${precio.padStart(7, ' ')}\n`;
 
             if (item.agregados && item.agregados.length > 0) {
                 item.agregados.forEach(ag => {
@@ -87,12 +98,31 @@ export const impresionService = {
         });
 
         data += "--------------------------------\n";
-        data += char.right + char.boldOn + "TOTAL: $" + parseFloat(pedido.total || 0).toFixed(2) + "\n" + char.boldOff;
+        
+        // Extras
+        const subtotalBase = parseFloat(pedido.subtotal || 0);
+        const dto = parseFloat(pedido.descuento || 0);
+        const svc = parseFloat(pedido.cargo_servicio || 0);
+        const emb = parseFloat(pedido.cargo_embalaje || 0);
+        const prop = parseFloat(pedido.propina || 0);
+
+        data += char.right;
+        
+        if (dto > 0 || svc > 0 || emb > 0 || prop > 0) {
+            data += `Subtotal: $${subtotalBase.toFixed(2)}\n`;
+            if (dto > 0) data += `Descuento: -$${dto.toFixed(2)}\n`;
+            if (svc > 0) data += `Servicio: +$${svc.toFixed(2)}\n`;
+            if (emb > 0) data += `Embalaje: +$${emb.toFixed(2)}\n`;
+            if (prop > 0) data += `Propina: +$${prop.toFixed(2)}\n`;
+            data += "--------------------------------\n";
+        }
+
+        data += char.boldOn + "TOTAL: $" + parseFloat(pedido.total || 0).toFixed(2) + "\n" + char.boldOff;
 
         data += char.center + "\n¡Gracias por su preferencia!\n\n\n";
         data += char.cut;
 
-        return [data]; // QZ espera un array
+        return [data];
     },
 
     /**
@@ -114,25 +144,43 @@ export const impresionService = {
         data += char.init;
         data += char.center + char.boldOn + "*** COMANDA DE COCINA ***\n" + char.boldOff;
         data += char.doubleH + "ORDEN #" + (pedido.orden_dia || '-') + char.normal + "\n";
-        data += "Pedido #" + pedido.numero_pedido + "\n";
+        data += "ID Pedido: #" + pedido.numero_pedido + "\n";
+        
+        data += "\n";
+        data += char.left;
 
         if (pedido.numero_mesa) {
-            data += "MESA: " + pedido.numero_mesa + "\n";
+            data += char.boldOn + "MESA: " + pedido.numero_mesa + "\n" + char.boldOff;
+        } else {
+            data += "Cliente: " + (pedido.cliente_nombre || 'General') + "\n";
         }
+        
+        data += "Tipo: " + (pedido.tipo_servicio || 'Mostrador').toUpperCase() + "\n";
+        data += "Fecha: " + formatearFechaHora(pedido.created_at) + "\n";
+
         data += "--------------------------------\n";
 
-        data += char.left;
         (pedido.pedido_items || []).forEach(item => {
             data += char.boldOn + item.cantidad + "x " + (item.producto_nombre || item.nombre) + "\n" + char.boldOff;
+            
             if (item.agregados && item.agregados.length > 0) {
+                // Notas y Agregados en Negrita
+                data += char.boldOn;
                 item.agregados.forEach(ag => {
-                    data += `  > ${ag.nombre}\n`;
+                    data += `  > +${ag.nombre}\n`;
                 });
+                data += char.boldOff;
             }
             if (item.notas) {
-                data += `  NOTA: ${item.notas}\n`;
+                data += char.boldOn + `  NOTA: ${item.notas}\n` + char.boldOff;
             }
         });
+
+        if (pedido.notas) {
+            data += "--------------------------------\n";
+            data += char.center + char.boldOn + "NOTAS GENERALES:\n" + char.boldOff + char.left;
+            data += char.boldOn + pedido.notas + "\n" + char.boldOff;
+        }
 
         data += "\n\n" + char.cut;
 

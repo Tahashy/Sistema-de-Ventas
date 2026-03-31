@@ -27,6 +27,11 @@ export const impresorasService = {
             const impresoras = impresorasService.getImpresoras();
             const index = impresoras.findIndex(i => i.id === impresora.id);
 
+            // Asegurar que tipos es un array
+            if (!impresora.tipos) {
+                impresora.tipos = impresora.tipo ? [impresora.tipo] : ['cocina'];
+            }
+
             if (index >= 0) {
                 impresoras[index] = { ...impresora, updated_at: new Date().toISOString() };
             } else {
@@ -60,10 +65,13 @@ export const impresorasService = {
         }
     },
 
-    /**
-     * Obtiene impresoras por tipo (cocina, caja, etc.)
-     */
-    getImpresorasPorTipo: (tipo) => {
-        return impresorasService.getImpresoras().filter(i => i.tipo === tipo && i.activo);
+    getImpresorasPorTipo: (tipoBuscado) => {
+        return impresorasService.getImpresoras().filter(i => {
+            if (!i.activo) return false;
+            if (i.tipos && Array.isArray(i.tipos)) {
+                return i.tipos.includes(tipoBuscado);
+            }
+            return i.tipo === tipoBuscado;
+        });
     }
 };

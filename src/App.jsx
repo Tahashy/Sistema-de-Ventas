@@ -145,7 +145,7 @@ function AppLayout() {
               />
               <Route
                 path="/pagos"
-                element={<Pagos restauranteId={restaurante.id} />}
+                element={<Pagos restauranteId={restaurante.id} restaurante={restaurante} />}
               />
               <Route
                 path="/informes"

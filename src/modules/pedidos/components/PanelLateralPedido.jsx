@@ -36,7 +36,7 @@ const PanelLateralPedido = ({ pedido, restaurante, onClose, onCambiarEstado, onE
 
             const ops = tipo === 'cocina'
                 ? impresionService.formatearComanda(pedido)
-                : impresionService.formatearTicket(pedido, { empresa: restaurante?.nombre });
+                : impresionService.formatearTicket(pedido, { restaurante: restaurante });
 
             for (const imp of impresoras) {
                 await impresionService.enviarAlPlugin(ops, imp.ip);

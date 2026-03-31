@@ -1,6 +1,7 @@
 // src/modules/pedidos/components/ImpresionAgregados.jsx
 
 import React from 'react';
+import { formatearFechaHora } from '../utils/pedidoHelpers';
 
 const ImpresionAgregados = ({ pedido, productosNuevos }) => {
     const getTipoLabel = (tipo) => {
@@ -58,13 +59,7 @@ const ImpresionAgregados = ({ pedido, productosNuevos }) => {
                         {pedido.tipo === 'mesa' && ` ${pedido.numero_mesa}`}
                     </div>
                     <div style={{ fontSize: '12px', marginTop: '5px' }}>
-                        {new Date().toLocaleString('es-PE', {
-                            day: '2-digit',
-                            month: '2-digit',
-                            year: 'numeric',
-                            hour: '2-digit',
-                            minute: '2-digit'
-                        })}
+                        {formatearFechaHora(pedido.created_at)}
                     </div>
                 </div>
 

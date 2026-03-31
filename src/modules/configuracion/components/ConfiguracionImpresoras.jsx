@@ -16,7 +16,7 @@ const ConfiguracionImpresoras = () => {
         nombre: '',
         ip: '', // Usaremos este campo para el nombre de la impresora en el SO
         puerto: '8080',
-        tipo: 'cocina'
+        tipos: ['cocina']
     });
 
     useEffect(() => {
@@ -48,7 +48,7 @@ const ConfiguracionImpresoras = () => {
             showToast('Impresora guardada correctamente', 'success');
             setMostrarModal(false);
             setEditando(null);
-            setFormData({ nombre: '', ip: '', puerto: '8080', tipo: 'cocina' });
+            setFormData({ nombre: '', ip: '', puerto: '8080', tipos: ['cocina'] });
             cargarImpresoras();
         } else {
             showToast('Error al guardar la impresora', 'error');
@@ -126,13 +126,13 @@ const ConfiguracionImpresoras = () => {
                                     </div>
                                     <div>
                                         <h4 style={{ margin: 0, fontSize: '16px', fontWeight: '700' }}>{imp.nombre}</h4>
-                                        <span style={{ fontSize: '12px', textTransform: 'uppercase', padding: '2px 6px', borderRadius: '4px', backgroundColor: imp.tipo === 'cocina' ? '#FEF3C7' : '#D1FAE5', color: imp.tipo === 'cocina' ? '#92400E' : '#065F46', fontWeight: '600' }}>
-                                            {imp.tipo}
+                                        <span style={{ fontSize: '12px', textTransform: 'uppercase', padding: '2px 6px', borderRadius: '4px', backgroundColor: '#E0E7FF', color: '#3730A3', fontWeight: '600' }}>
+                                            {(imp.tipos && Array.isArray(imp.tipos) ? imp.tipos.join(' y ') : imp.tipo)}
                                         </span>
                                     </div>
                                 </div>
                                 <div style={{ display: 'flex', gap: '8px' }}>
-                                    <button onClick={() => { setEditando(imp); setFormData(imp); setMostrarModal(true); }} style={{ padding: '6px', backgroundColor: '#E2E8F0', border: 'none', borderRadius: '6px', cursor: 'pointer' }}>📝</button>
+                                    <button onClick={() => { setEditando(imp); setFormData({ ...imp, tipos: imp.tipos || (imp.tipo ? [imp.tipo] : ['cocina']) }); setMostrarModal(true); }} style={{ padding: '6px', backgroundColor: '#E2E8F0', border: 'none', borderRadius: '6px', cursor: 'pointer' }}>📝</button>
                                     <button onClick={() => handleEliminar(imp.id)} style={{ padding: '6px', backgroundColor: '#FEE2E2', border: 'none', borderRadius: '6px', cursor: 'pointer', color: '#EF4444' }}>
                                         <Trash2 size={16} />
                                     </button>
@@ -200,15 +200,37 @@ const ConfiguracionImpresoras = () => {
                                 <p style={{ fontSize: '11px', color: '#718096', marginTop: '4px' }}>El nombre debe coincidir exactamente con el de Impresoras del Panel de Control.</p>
                             </div>
                             <div style={{ marginBottom: '20px' }}>
-                                <label style={{ display: 'block', fontSize: '14px', marginBottom: '4px', fontWeight: '600' }}>Tipo de Comprobante</label>
-                                <select
-                                    value={formData.tipo}
-                                    onChange={e => setFormData({ ...formData, tipo: e.target.value })}
-                                    style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid #e2e8f0', backgroundColor: 'white' }}
-                                >
-                                    <option value="cocina">Comandas (Cocina)</option>
-                                    <option value="caja">Recibos (Caja)</option>
-                                </select>
+                                <label style={{ display: 'block', fontSize: '14px', marginBottom: '8px', fontWeight: '600' }}>Tipos de Comprobante</label>
+                                <div style={{ display: 'flex', gap: '16px' }}>
+                                    <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '14px', cursor: 'pointer' }}>
+                                        <input
+                                            type="checkbox"
+                                            checked={formData.tipos?.includes('cocina')}
+                                            onChange={(e) => {
+                                                const nuevosTipos = e.target.checked
+                                                    ? [...(formData.tipos || []), 'cocina']
+                                                    : (formData.tipos || []).filter(t => t !== 'cocina');
+                                                setFormData({ ...formData, tipos: nuevosTipos });
+                                            }}
+                                            style={{ width: '18px', height: '18px', cursor: 'pointer' }}
+                                        />
+                                        Comandas (Cocina)
+                                    </label>
+                                    <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '14px', cursor: 'pointer' }}>
+                                        <input
+                                            type="checkbox"
+                                            checked={formData.tipos?.includes('caja')}
+                                            onChange={(e) => {
+                                                const nuevosTipos = e.target.checked
+                                                    ? [...(formData.tipos || []), 'caja']
+                                                    : (formData.tipos || []).filter(t => t !== 'caja');
+                                                setFormData({ ...formData, tipos: nuevosTipos });
+                                            }}
+                                            style={{ width: '18px', height: '18px', cursor: 'pointer' }}
+                                        />
+                                        Recibos (Caja)
+                                    </label>
+                                </div>
                             </div>
                             <div style={{ display: 'flex', gap: '12px' }}>
                                 <button type="button" onClick={() => setMostrarModal(false)} style={{ flex: 1, padding: '10px', borderRadius: '8px', border: '1px solid #e2e8f0', cursor: 'pointer' }}>Cancelar</button>

@@ -1,5 +1,5 @@
 import React, { forwardRef } from 'react';
-import { formatearMoneda } from '../utils/pedidoHelpers';
+import { formatearMoneda, formatearFechaHora } from '../utils/pedidoHelpers';
 
 const TicketImpresion = forwardRef(({ pedido, restaurante, tipoImpresion = 'cliente', itemsFiltrados = null }, ref) => {
     if (!pedido || !restaurante) return null;
@@ -50,7 +50,7 @@ const TicketImpresion = forwardRef(({ pedido, restaurante, tipoImpresion = 'clie
                     <p style={{ margin: '0 0 4px 0', fontSize: '12px' }}>
                         ID: #{pedido.numero_pedido}
                     </p>
-                    <p style={{ margin: '0 0 2px 0' }}>Fecha: {new Date().toLocaleString()}</p>
+                    <p style={{ margin: '0 0 2px 0' }}>Fecha: {formatearFechaHora(pedido.created_at)}</p>
                     {!isCocina && <p style={{ margin: '0 0 2px 0' }}>Cliente: {pedido.cliente_nombre || 'General'}</p>}
                     <p style={{ margin: '0 0 2px 0' }}>Tipo: {pedido.tipo?.toUpperCase() || pedido.tipo_servicio?.toUpperCase()}</p>
 
@@ -114,6 +114,21 @@ const TicketImpresion = forwardRef(({ pedido, restaurante, tipoImpresion = 'clie
                         ))
                     )}
                 </div>
+
+                {/* Notas Generales */}
+                {pedido.notas && (
+                    <div style={{
+                        marginBottom: '10px',
+                        padding: '8px',
+                        border: '2px solid black',
+                        fontSize: isCocina ? '18px' : '14px',
+                        fontWeight: 'bold',
+                        textAlign: 'left'
+                    }}>
+                        <p style={{ margin: '0 0 5px 0', textDecoration: 'underline' }}>NOTAS DEL PEDIDO:</p>
+                        <p style={{ margin: 0 }}>{pedido.notas}</p>
+                    </div>
+                )}
 
                 {/* Totales - Solo si NO es cocina */}
                 {!isCocina && (

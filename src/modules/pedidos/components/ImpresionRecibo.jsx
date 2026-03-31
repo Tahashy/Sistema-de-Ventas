@@ -1,6 +1,7 @@
 // src/modules/pedidos/components/ImpresionRecibo.jsx
 
 import React from 'react';
+import { formatearFechaHora } from '../utils/pedidoHelpers';
 
 const ImpresionRecibo = ({ pedido }) => {
     const getTipoLabel = (tipo) => {
@@ -76,13 +77,7 @@ const ImpresionRecibo = ({ pedido }) => {
                     <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '3px' }}>
                         <strong>Fecha:</strong>
                         <span>
-                            {new Date(pedido.created_at).toLocaleString('es-PE', {
-                                day: '2-digit',
-                                month: '2-digit',
-                                year: 'numeric',
-                                hour: '2-digit',
-                                minute: '2-digit'
-                            })}
+                            {formatearFechaHora(pedido.created_at)}
                         </span>
                     </div>
                     <div style={{ fontSize: '11px', marginTop: '5px', color: '#666' }}>

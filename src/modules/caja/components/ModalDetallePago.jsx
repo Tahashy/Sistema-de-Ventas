@@ -5,7 +5,7 @@ import { formatearMoneda, formatearFechaHora } from '../../pedidos/utils/pedidoH
 import { impresionService } from '../../../services/impresionService';
 import { impresorasService } from '../../../services/impresorasService';
 
-const ModalDetallePago = ({ pedido, onClose }) => {
+const ModalDetallePago = ({ pedido, restaurante, onClose }) => {
     if (!pedido) return null;
 
     const [imprimiendo, setImprimiendo] = useState(false);
@@ -40,7 +40,7 @@ const ModalDetallePago = ({ pedido, onClose }) => {
                 return;
             }
 
-            const ops = impresionService.formatearTicket(pedido);
+            const ops = impresionService.formatearTicket(pedido, { restaurante });
             for (const imp of impresoras) {
                 await impresionService.enviarAlPlugin(ops, imp.ip);
             }
