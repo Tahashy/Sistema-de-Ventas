@@ -96,8 +96,8 @@ const DropdownButton = ({
                 <div style={{
                     position: 'absolute',
                     top: 'calc(100% + 8px)',
-                    right: 0, // Align right to prevent overflow
-                    left: 'auto',
+                    left: 0, 
+                    right: 'auto',
                     background: 'white',
                     borderRadius: '10px',
                     boxShadow: '0 8px 24px rgba(0,0,0,0.15)',
