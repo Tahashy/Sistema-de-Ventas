@@ -4,7 +4,7 @@ import React, { useState, useEffect, useMemo, useRef } from 'react';
 import {
     Search, X, Plus, Minus, Trash2, User, Phone, MapPin,
     CreditCard, DollarSign, ChefHat, ShoppingBag, Truck, Edit, Printer, Check,
-    CheckCircle, MessageCircle
+    CheckCircle, MessageCircle, Heart, Percent, Box, HandPlatter
 } from 'lucide-react';
 import { supabase } from '../../../services/supabaseClient';
 import { showToast } from '../../../components/Toast';
@@ -31,6 +31,56 @@ const PrintButton = ({ onClick, label, color = '#3B82F6' }) => (
     >
         <Printer size={16} /> {label}
     </button>
+);
+
+const CargoAdicional = ({ icon: Icon, label, value, onChange, color = "#718096" }) => (
+    <div style={{
+        display: 'flex',
+        flexDirection: 'column',
+        gap: '4px',
+        flex: 1
+    }}>
+        <label style={{
+            fontSize: '11px',
+            fontWeight: '700',
+            color: '#64748b',
+            textTransform: 'uppercase',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '4px'
+        }}>
+            <Icon size={12} color={color} /> {label}
+        </label>
+        <div style={{ position: 'relative' }}>
+            <span style={{
+                position: 'absolute',
+                left: '10px',
+                top: '50%',
+                transform: 'translateY(-50%)',
+                color: '#94a3b8',
+                fontSize: '13px',
+                fontWeight: '600'
+            }}>$</span>
+            <input
+                type="number"
+                value={value}
+                onChange={e => onChange(e.target.value)}
+                onFocus={(e) => e.target.select()}
+                style={{
+                    width: '100%',
+                    padding: '8px 8px 8px 22px',
+                    borderRadius: '10px',
+                    border: '1px solid #e2e8f0',
+                    fontSize: '14px',
+                    fontWeight: '700',
+                    color: '#1e293b',
+                    outline: 'none',
+                    transition: 'all 0.2s',
+                    backgroundColor: 'white'
+                }}
+            />
+        </div>
+    </div>
 );
 
 const ModalNuevoPedido = ({ restauranteId, restaurante = { nombre: 'Restaurante', direccion: '', telefono: '' }, userId, productos, onClose, onSuccess, mesa = null, pedidoAEditar = null }) => {
@@ -732,12 +782,11 @@ const ModalNuevoPedido = ({ restauranteId, restaurante = { nombre: 'Restaurante'
                             ))}
                         </div>
 
-                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '16px' }}>
-                            {/* Inputs simplificados para props */}
-                            <input type="number" placeholder="Propina" value={propina} onChange={e => setPropina(e.target.value)} style={{ padding: '8px', borderRadius: '6px', border: '1px solid #ddd' }} />
-                            <input type="number" placeholder="Descuento" value={descuento} onChange={e => setDescuento(e.target.value)} style={{ padding: '8px', borderRadius: '6px', border: '1px solid #ddd' }} />
-                            <input type="number" placeholder="Embalaje" value={embalaje} onChange={e => setEmbalaje(e.target.value)} style={{ padding: '8px', borderRadius: '6px', border: '1px solid #ddd' }} />
-                            <input type="number" placeholder="Servicio" value={servicio} onChange={e => setServicio(e.target.value)} style={{ padding: '8px', borderRadius: '6px', border: '1px solid #ddd' }} />
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '20px' }}>
+                            <CargoAdicional icon={Heart} label="Propina" value={propina} onChange={setPropina} color="#EC4899" />
+                            <CargoAdicional icon={Percent} label="Descuento" value={descuento} onChange={setDescuento} color="#F59E0B" />
+                            <CargoAdicional icon={Box} label="Embalaje" value={embalaje} onChange={setEmbalaje} color="#8B5CF6" />
+                            <CargoAdicional icon={HandPlatter} label="Servicio" value={servicio} onChange={setServicio} color="#3B82F6" />
                         </div>
 
                         <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '16px' }}>
