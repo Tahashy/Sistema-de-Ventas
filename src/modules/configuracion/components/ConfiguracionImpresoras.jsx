@@ -11,6 +11,7 @@ const ConfiguracionImpresoras = () => {
     const [editando, setEditando] = useState(null);
     const [probando, setProbando] = useState(null);
     const [qzConectado, setQzConectado] = useState(false);
+    const [impresoraAEliminar, setImpresoraAEliminar] = useState(null);
 
     const [formData, setFormData] = useState({
         nombre: '',
@@ -55,11 +56,12 @@ const ConfiguracionImpresoras = () => {
         }
     };
 
-    const handleEliminar = (id) => {
-        if (window.confirm('¿Estás seguro de eliminar esta impresora?')) {
-            impresorasService.deleteImpresora(id);
+    const handleConfirmarEliminar = () => {
+        if (impresoraAEliminar) {
+            impresorasService.deleteImpresora(impresoraAEliminar.id);
             cargarImpresoras();
             showToast('Impresora eliminada', 'success');
+            setImpresoraAEliminar(null);
         }
     };
 
@@ -133,7 +135,7 @@ const ConfiguracionImpresoras = () => {
                                 </div>
                                 <div style={{ display: 'flex', gap: '8px' }}>
                                     <button onClick={() => { setEditando(imp); setFormData({ ...imp, tipos: imp.tipos || (imp.tipo ? [imp.tipo] : ['cocina']) }); setMostrarModal(true); }} style={{ padding: '6px', backgroundColor: '#E2E8F0', border: 'none', borderRadius: '6px', cursor: 'pointer' }}>📝</button>
-                                    <button onClick={() => handleEliminar(imp.id)} style={{ padding: '6px', backgroundColor: '#FEE2E2', border: 'none', borderRadius: '6px', cursor: 'pointer', color: '#EF4444' }}>
+                                    <button onClick={() => setImpresoraAEliminar(imp)} style={{ padding: '6px', backgroundColor: '#FEE2E2', border: 'none', borderRadius: '6px', cursor: 'pointer', color: '#EF4444' }}>
                                         <Trash2 size={16} />
                                     </button>
                                 </div>
@@ -237,6 +239,41 @@ const ConfiguracionImpresoras = () => {
                                 <button type="submit" disabled={!qzConectado} style={{ flex: 1, padding: '10px', borderRadius: '8px', border: 'none', backgroundColor: qzConectado ? '#FF6B35' : '#a0aec0', color: 'white', fontWeight: '600', cursor: qzConectado ? 'pointer' : 'not-allowed' }}>Guardar</button>
                             </div>
                         </form>
+                    </div>
+                </div>
+            )}
+            {/* Modal Confirmar Eliminación */}
+            {impresoraAEliminar && (
+                <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.5)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <div style={{ backgroundColor: 'white', borderRadius: '16px', padding: '24px', width: '400px', boxShadow: '0 20px 25px -5px rgba(0,0,0,0.1)' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '16px', color: '#DC2626' }}>
+                            <div style={{ backgroundColor: '#FEE2E2', padding: '10px', borderRadius: '50%' }}>
+                                <Trash2 size={24} />
+                            </div>
+                            <h3 style={{ margin: 0, fontSize: '18px' }}>Eliminar Impresora</h3>
+                        </div>
+                        <p style={{ color: '#4B5563', marginBottom: '24px', fontSize: '14px', lineHeight: '1.5' }}>
+                            ¿Estás seguro de que deseas eliminar la impresora <strong>{impresoraAEliminar.nombre}</strong>?<br/>
+                            Esta acción no se puede deshacer.
+                        </p>
+                        <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end' }}>
+                            <button 
+                                onClick={() => setImpresoraAEliminar(null)} 
+                                style={{ padding: '8px 16px', borderRadius: '8px', border: '1px solid #E5E7EB', backgroundColor: 'white', color: '#4B5563', fontWeight: '500', cursor: 'pointer', transition: 'all 0.2s' }}
+                                onMouseOver={(e) => e.currentTarget.style.backgroundColor = '#F3F4F6'}
+                                onMouseOut={(e) => e.currentTarget.style.backgroundColor = 'white'}
+                            >
+                                Cancelar
+                            </button>
+                            <button 
+                                onClick={handleConfirmarEliminar} 
+                                style={{ padding: '8px 16px', borderRadius: '8px', border: 'none', backgroundColor: '#DC2626', color: 'white', fontWeight: '500', cursor: 'pointer', transition: 'all 0.2s' }}
+                                onMouseOver={(e) => e.currentTarget.style.backgroundColor = '#B91C1C'}
+                                onMouseOut={(e) => e.currentTarget.style.backgroundColor = '#DC2626'}
+                            >
+                                Sí, eliminar
+                            </button>
+                        </div>
                     </div>
                 </div>
             )}
