@@ -212,7 +212,9 @@ const PedidoCard = ({ pedido, onCambiarEstado, onVerDetalle, onImprimir, onEdita
             color: '#4a5568',
             textTransform: 'capitalize'
           }}>
-            {pedido.metodo_pago}
+            {pedido.metodo_pago && (pedido.metodo_pago.startsWith('[') || pedido.metodo_pago.startsWith('{')) 
+              ? 'COMPARTIDO' 
+              : (pedido.metodo_pago ? pedido.metodo_pago.toUpperCase() : '-')}
           </p>
         </div>
       </div>

@@ -73,7 +73,9 @@ const PedidoRow = ({ pedido, onCambiarEstado, onVerDetalle, onEliminar, onToggle
           color: '#4a5568',
           display: 'inline-block'
         }}>
-          {pedido.metodo_pago}
+          {pedido.metodo_pago && (pedido.metodo_pago.startsWith('[') || pedido.metodo_pago.startsWith('{')) 
+            ? 'COMPARTIDO' 
+            : (pedido.metodo_pago ? pedido.metodo_pago.toUpperCase() : '-')}
         </span>
       </td>
       <td style={tdStyle}>

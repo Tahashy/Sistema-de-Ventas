@@ -105,7 +105,10 @@ const ModalNuevoPedido = ({ restauranteId, restaurante = { nombre: 'Restaurante'
     // Datos del pedido
     const [tipoPedido, setTipoPedido] = useState(mesa ? 'mesa' : 'mostrador');
     const [cliente, setCliente] = useState({ nombre: '', telefono: '', direccion: '' });
-    const [metodoPago, setMetodoPago] = useState('efectivo');
+    
+    // Pagos compartidos
+    const [pagos, setPagos] = useState([]);
+    
     const [mesaSeleccionada, setMesaSeleccionada] = useState(mesa); // Mesa seleccionada actual
     const [mostrarSelectorMesa, setMostrarSelectorMesa] = useState(false);
 
@@ -167,11 +170,21 @@ const ModalNuevoPedido = ({ restauranteId, restaurante = { nombre: 'Restaurante'
                 direccion: pedidoAEditar.direccion_delivery || ''
             });
             setTipoPedido(pedidoAEditar.tipo_servicio || 'mostrador');
-            setMetodoPago(pedidoAEditar.metodo_pago || 'efectivo');
             setDescuento(pedidoAEditar.descuento || 0);
             setPropina(pedidoAEditar.propina || 0);
             setServicio(pedidoAEditar.cargo_servicio || 0);
             setEmbalaje(pedidoAEditar.cargo_embalaje || 0);
+            
+            // Cargar pagos
+            try {
+                if (pedidoAEditar.metodo_pago && pedidoAEditar.metodo_pago.startsWith('[')) {
+                    setPagos(JSON.parse(pedidoAEditar.metodo_pago));
+                } else {
+                    setPagos([{ id: Date.now(), metodo: pedidoAEditar.metodo_pago || 'efectivo', monto: pedidoAEditar.total }]);
+                }
+            } catch (e) {
+                setPagos([{ id: Date.now(), metodo: pedidoAEditar.metodo_pago || 'efectivo', monto: pedidoAEditar.total }]);
+            }
 
             // Si tiene mesa
             if (pedidoAEditar.numero_mesa) {
@@ -209,8 +222,35 @@ const ModalNuevoPedido = ({ restauranteId, restaurante = { nombre: 'Restaurante'
         const subtotal = carrito.reduce((acc, item) => acc + item.subtotal, 0);
         const total = subtotal - parseFloat(descuento || 0) + parseFloat(propina || 0) + parseFloat(servicio || 0) + parseFloat(embalaje || 0);
         const vuelto = montoRecibido ? parseFloat(montoRecibido) - total : 0;
+        
+        // Sincronizar pago único si no hay pagos configurados aún (solo para creación inicial)
         return { subtotal, total, vuelto };
     }, [carrito, descuento, propina, servicio, embalaje, montoRecibido]);
+
+    // Efecto para inicializar primer pago si está vacío
+    useEffect(() => {
+        if (pagos.length === 0 && totales.total > 0) {
+            setPagos([{ id: Date.now(), metodo: 'efectivo', monto: totales.total }]);
+        }
+    }, [totales.total]);
+
+    const agregarPago = () => {
+        const pagadoYa = pagos.reduce((acc, p) => acc + parseFloat(p.monto || 0), 0);
+        const restante = Math.max(0, totales.total - pagadoYa);
+        
+        setPagos([...pagos, { id: Date.now(), metodo: 'efectivo', monto: restante }]);
+    };
+
+    const eliminarPago = (id) => {
+        if (pagos.length <= 1) return;
+        setPagos(pagos.filter(p => p.id !== id));
+    };
+
+    const actualizarPago = (id, campo, valor) => {
+        setPagos(pagos.map(p => 
+            p.id === id ? { ...p, [campo]: valor } : p
+        ));
+    };
 
     // Handlers
     const handleAddProducto = (producto) => {
@@ -238,13 +278,14 @@ const ModalNuevoPedido = ({ restauranteId, restaurante = { nombre: 'Restaurante'
             const pedidoData = {
                 restaurante_id: restauranteId,
                 // numero_pedido: se mantiene o genera
-                tipo: tipoPedido === 'mostrador' ? 'llevar' : tipoPedido,
+                tipo: tipoPedido === 'mostrador' ? 'mostrador' : tipoPedido,
+                tipo_servicio: tipoPedido === 'mostrador' ? 'mostrador' : tipoPedido,
 
                 numero_mesa: (tipoPedido === 'mesa' && mesaSeleccionada) ? mesaSeleccionada.numero_mesa : null,
                 cliente_nombre: cliente.nombre || 'Cliente General',
                 cliente_celular: cliente.telefono,
                 direccion_delivery: cliente.direccion,
-                metodo_pago: metodoPago,
+                metodo_pago: pagos.length === 1 ? pagos[0].metodo : JSON.stringify(pagos),
                 subtotal: totales.subtotal,
                 descuento: parseFloat(descuento || 0),
                 propina: parseFloat(propina || 0),
@@ -763,23 +804,73 @@ const ModalNuevoPedido = ({ restauranteId, restaurante = { nombre: 'Restaurante'
 
                     {/* Footer */}
                     <div style={{ padding: '20px', backgroundColor: '#F9FAFB', borderTop: '1px solid #E5E7EB' }}>
-                        {/* Selector Método Pago */}
-                        <div style={{ marginBottom: '16px', display: 'flex', overflow: 'auto', gap: '8px', paddingBottom: '4px' }}>
-                            {['efectivo', 'tarjeta', 'yape', 'plin'].map(metodo => (
-                                <button
-                                    key={metodo}
-                                    onClick={() => setMetodoPago(metodo)}
-                                    style={{
-                                        padding: '6px 12px', borderRadius: '16px', border: 'none',
-                                        backgroundColor: metodoPago === metodo ? '#1F2937' : '#E5E7EB',
-                                        color: metodoPago === metodo ? 'white' : '#4B5563',
-                                        fontSize: '12px', fontWeight: '600', cursor: 'pointer',
-                                        textTransform: 'capitalize', whiteSpace: 'nowrap'
+                        {/* Pagos Compartidos */}
+                        <div style={{ marginBottom: '16px' }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                                <label style={{ fontSize: '13px', fontWeight: '700', color: '#4A5568' }}>MÉTODOS DE PAGO</label>
+                                <button 
+                                    onClick={agregarPago}
+                                    style={{ 
+                                        padding: '4px 8px', background: '#EBF8FF', color: '#3182CE', 
+                                        border: 'none', borderRadius: '6px', fontSize: '11px', fontWeight: '700',
+                                        cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px'
                                     }}
                                 >
-                                    {metodo}
+                                    <Plus size={14} /> Añadir Pago
                                 </button>
-                            ))}
+                            </div>
+                            
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                                {pagos.map((pago, index) => (
+                                    <div key={pago.id} style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                                        <select 
+                                            value={pago.metodo}
+                                            onChange={(e) => actualizarPago(pago.id, 'metodo', e.target.value)}
+                                            style={{
+                                                flex: 1, padding: '8px', borderRadius: '8px', border: '1px solid #E5E7EB',
+                                                fontSize: '13px', outline: 'none'
+                                            }}
+                                        >
+                                            <option value="efectivo">Efectivo</option>
+                                            <option value="tarjeta">Tarjeta</option>
+                                            <option value="yape">Yape</option>
+                                            <option value="plin">Plin</option>
+                                            <option value="transferencia">Transferencia</option>
+                                        </select>
+                                        <div style={{ position: 'relative', width: '120px' }}>
+                                            <span style={{ position: 'absolute', left: '8px', top: '50%', transform: 'translateY(-50%)', color: '#9CA3AF', fontSize: '12px' }}>$</span>
+                                            <input 
+                                                type="number"
+                                                value={pago.monto}
+                                                onChange={(e) => actualizarPago(pago.id, 'monto', e.target.value)}
+                                                style={{
+                                                    width: '100%', padding: '8px 8px 8px 18px', borderRadius: '8px', 
+                                                    border: '1px solid #E5E7EB', fontSize: '14px', fontWeight: '600',
+                                                    outline: 'none'
+                                                }}
+                                            />
+                                        </div>
+                                        {pagos.length > 1 && (
+                                            <button 
+                                                onClick={() => eliminarPago(pago.id)}
+                                                style={{ background: '#FEE2E2', color: '#EF4444', border: 'none', borderRadius: '8px', padding: '8px', cursor: 'pointer' }}
+                                            >
+                                                <Trash2 size={16} />
+                                            </button>
+                                        )}
+                                    </div>
+                                ))}
+                            </div>
+                            
+                            {/* Diferencia si no cuadra */}
+                            {Math.abs(pagos.reduce((acc, p) => acc + parseFloat(p.monto || 0), 0) - totales.total) > 0.01 && (
+                                <div style={{ marginTop: '8px', fontSize: '12px', color: '#EF4444', fontWeight: '600', textAlign: 'right' }}>
+                                    {pagos.reduce((acc, p) => acc + parseFloat(p.monto || 0), 0) < totales.total 
+                                        ? `Faltan pagar: ${formatearMoneda(totales.total - pagos.reduce((acc, p) => acc + parseFloat(p.monto || 0), 0))}`
+                                        : `Sobran: ${formatearMoneda(pagos.reduce((acc, p) => acc + parseFloat(p.monto || 0), 0) - totales.total)}`
+                                    }
+                                </div>
+                            )}
                         </div>
 
                         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '20px' }}>
@@ -936,7 +1027,7 @@ const ModalNuevoPedido = ({ restauranteId, restaurante = { nombre: 'Restaurante'
                     cargo_embalaje: parseFloat(embalaje || 0),
                     propina: parseFloat(propina || 0),
                     total: totales.total,
-                    metodo_pago: metodoPago
+                    metodo_pago: pagos.length === 1 ? pagos[0].metodo : JSON.stringify(pagos)
                 }}
                 restaurante={restaurante}
                 tipoImpresion={printConfig.tipo}

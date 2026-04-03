@@ -51,7 +51,17 @@ const TicketImpresion = forwardRef(({ pedido, restaurante, tipoImpresion = 'clie
                         ID: #{pedido.numero_pedido}
                     </p>
                     <p style={{ margin: '0 0 2px 0' }}>Fecha: {formatearFechaHora(pedido.created_at)}</p>
-                    {!isCocina && <p style={{ margin: '0 0 2px 0' }}>Cliente: {pedido.cliente_nombre || 'General'}</p>}
+                    {!isCocina && (
+                        <>
+                            <p style={{ margin: '0 0 2px 0' }}>Cliente: {pedido.cliente_nombre || 'General'}</p>
+                            {pedido.cliente_celular && <p style={{ margin: '0 0 2px 0' }}>Celular: {pedido.cliente_celular}</p>}
+                            {pedido.direccion_delivery && (
+                                <p style={{ margin: '4px 0 2px 0', fontStyle: 'italic', fontSize: '11px' }}>
+                                    Direcc: {pedido.direccion_delivery}
+                                </p>
+                            )}
+                        </>
+                    )}
                     <p style={{ margin: '0 0 2px 0' }}>Tipo: {pedido.tipo?.toUpperCase() || pedido.tipo_servicio?.toUpperCase()}</p>
 
                     {(pedido.numero_mesa || pedido.mesa) && (
@@ -138,12 +148,42 @@ const TicketImpresion = forwardRef(({ pedido, restaurante, tipoImpresion = 'clie
                         {pedido.cargo_servicio > 0 && <p style={{ margin: '0 0 2px 0' }}>Servicio: +{formatearMoneda(pedido.cargo_servicio)}</p>}
                         {pedido.cargo_embalaje > 0 && <p style={{ margin: '0 0 2px 0' }}>Embalaje: +{formatearMoneda(pedido.cargo_embalaje)}</p>}
                         {pedido.propina > 0 && <p style={{ margin: '0 0 2px 0' }}>Propina: +{formatearMoneda(pedido.propina)}</p>}
-                        <p style={{ margin: '5px 0 0 0', fontSize: '16px', fontWeight: 'bold' }}>
-                            TOTAL: {formatearMoneda(pedido.total)}
-                        </p>
-                        <p style={{ margin: '5px 0 0 0', fontSize: '12px' }}>
-                            Método pago: {pedido.metodo_pago ? pedido.metodo_pago.toUpperCase() : '-'}
-                        </p>
+                        <div style={{ marginTop: '8px', fontSize: '13px' }}>
+                            <p style={{ margin: '0 0 4px 0', fontSize: '14px', fontWeight: 'bold' }}>
+                                TOTAL: {formatearMoneda(pedido.total)}
+                            </p>
+                            <div style={{ fontSize: '12px', color: '#333' }}>
+                                <span style={{ fontWeight: 'bold' }}>PAGO:</span>
+                                {pedido.metodo_pago && (pedido.metodo_pago.startsWith('[') || pedido.metodo_pago.startsWith('{')) ? (
+                                    <>
+                                        <span style={{ marginLeft: '5px', fontWeight: 'bold' }}>COMPARTIDO</span>
+                                        {(() => {
+                                            try {
+                                                const pagosArr = JSON.parse(pedido.metodo_pago);
+                                                return pagosArr.map((p, i) => {
+                                                    // Handle case-insensitive keys
+                                                    const metodoKey = Object.keys(p).find(k => k.toLowerCase() === 'metodo');
+                                                    const montoKey = Object.keys(p).find(k => k.toLowerCase() === 'monto');
+                                                    const m = metodoKey ? p[metodoKey] : 'Otros';
+                                                    const monto = montoKey ? p[montoKey] : 0;
+
+                                                    return (
+                                                        <div key={i} style={{ display: 'flex', justifyContent: 'space-between', paddingLeft: '10px', marginTop: '2px' }}>
+                                                            <span>- {m.toUpperCase()}</span>
+                                                            <span>{formatearMoneda(monto)}</span>
+                                                        </div>
+                                                    );
+                                                });
+                                            } catch (e) {
+                                                return <p style={{ margin: 0, paddingLeft: '10px' }}>{pedido.metodo_pago.toUpperCase()}</p>;
+                                            }
+                                        })()}
+                                    </>
+                                ) : (
+                                    <span style={{ marginLeft: '5px' }}>{pedido.metodo_pago ? pedido.metodo_pago.toUpperCase() : '-'}</span>
+                                )}
+                            </div>
+                        </div>
                         {pedido.vuelto > 0 && <p style={{ margin: '2px 0 0 0', fontSize: '12px' }}>Vuelto: {formatearMoneda(pedido.vuelto)}</p>}
                     </div>
                 )}

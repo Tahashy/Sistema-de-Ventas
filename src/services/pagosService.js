@@ -146,22 +146,67 @@ export const obtenerEstadisticas = async (restauranteId, fechaInicio, fechaFin) 
             estadisticas.totalBebidas = dataBebidas.reduce((sum, item) => sum + parseFloat(item.subtotal || 0), 0);
         }
 
+        // Helper para normalizar el nombre del método y mapearlo a la clave correcta de estadisticas
+        const normalizarMetodoKey = (m) => {
+            if (!m) return 'otros';
+            const s = m.toString().toLowerCase().trim();
+            if (s.includes('efectivo')) return 'efectivo';
+            if (s.includes('tarjeta')) return 'tarjeta';
+            if (s.includes('yape')) return 'yape';
+            if (s.includes('plin')) return 'plin';
+            if (s.includes('transferencia')) return 'transferencia';
+            return 'otros';
+        };
+
         data.forEach(pedido => {
-            estadisticas.totalVentas += parseFloat(pedido.total || 0);
+            const totalPedido = parseFloat(pedido.total || 0);
+            estadisticas.totalVentas += totalPedido;
             estadisticas.totalPropinas += parseFloat(pedido.propina || 0);
 
-            // Por método de pago
-            const metodo = pedido.metodo_pago || 'otros';
-            if (estadisticas.porMetodoPago[metodo] !== undefined) {
-                estadisticas.porMetodoPago[metodo] += parseFloat(pedido.total || 0);
+            // Por método de pago (Soporte para pagos compartidos)
+            const metodoRaw = pedido.metodo_pago;
+            if (metodoRaw && (metodoRaw.toString().trim().startsWith('[') || metodoRaw.toString().trim().startsWith('{'))) {
+                try {
+                    const pagosArr = JSON.parse(metodoRaw);
+                    if (Array.isArray(pagosArr)) {
+                        pagosArr.forEach(p => {
+                            // Buscar clave de método y monto de forma insensible a mayúsculas
+                            const kMetodo = Object.keys(p).find(k => k.toLowerCase() === 'metodo');
+                            const kMonto = Object.keys(p).find(k => k.toLowerCase() === 'monto');
+                            
+                            const m = normalizarMetodoKey(kMetodo ? p[kMetodo] : 'otros');
+                            const monto = parseFloat((kMonto ? p[kMonto] : 0) || 0);
+                            
+                            if (estadisticas.porMetodoPago[m] !== undefined) {
+                                estadisticas.porMetodoPago[m] += monto;
+                            } else {
+                                estadisticas.porMetodoPago.otros += monto;
+                            }
+                        });
+                    }
+                } catch (e) {
+                    console.error('Error parseando pagos compartidos:', e);
+                    estadisticas.porMetodoPago.otros += totalPedido;
+                }
             } else {
-                estadisticas.porMetodoPago.otros += parseFloat(pedido.total || 0);
+                // Lógica para método único con normalización
+                const m = normalizarMetodoKey(metodoRaw);
+                if (estadisticas.porMetodoPago[m] !== undefined) {
+                    estadisticas.porMetodoPago[m] += totalPedido;
+                } else {
+                    estadisticas.porMetodoPago.otros += totalPedido;
+                }
             }
 
             // Por tipo de servicio
-            const tipo = pedido.tipo_servicio || 'mostrador';
+            const tipo = (pedido.tipo_servicio || 'mostrador').toLowerCase().trim();
             if (estadisticas.porTipoServicio[tipo] !== undefined) {
-                estadisticas.porTipoServicio[tipo] += parseFloat(pedido.total || 0);
+                estadisticas.porTipoServicio[tipo] += totalPedido;
+            } else {
+                // Mapeo flexible para tipo de servicio
+                if (tipo.includes('mesa')) estadisticas.porTipoServicio.mesa += totalPedido;
+                else if (tipo.includes('domicilio') || tipo.includes('delivery')) estadisticas.porTipoServicio.domicilio += totalPedido;
+                else estadisticas.porTipoServicio.mostrador += totalPedido;
             }
         });
 

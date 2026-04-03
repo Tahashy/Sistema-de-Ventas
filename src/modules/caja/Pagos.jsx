@@ -236,7 +236,11 @@ const Pagos = ({ restauranteId, restaurante }) => {
                                             <BadgeType type={pago.tipo_servicio} />
                                         </Td>
                                         <Td style={{ fontWeight: '600' }}>{formatearMoneda(pago.total)}</Td>
-                                        <Td style={{ textTransform: 'capitalize' }}>{pago.metodo_pago}</Td>
+                                        <Td style={{ textTransform: 'capitalize', fontWeight: '600' }}>
+                                            {pago.metodo_pago && (pago.metodo_pago.startsWith('[') || pago.metodo_pago.startsWith('{')) 
+                                                ? 'COMPARTIDO' 
+                                                : (pago.metodo_pago ? pago.metodo_pago.toUpperCase() : '-')}
+                                        </Td>
                                         <Td>
                                             <BadgeStatus status={pago.estado} />
                                         </Td>

@@ -47,6 +47,14 @@ const Pedidos = ({ restauranteId, restaurante, isAdmin, userId, openNewOrderModa
     };
 
     const cambiarEstadoPedido = (id, nuevoEstado) => {
+        // Buscar el pedido actual para validar pago si se intenta entregar
+        const pedido = pedidos.find(p => p.id === id);
+        
+        if (nuevoEstado === 'entregado' && !pedido.pagado) {
+            showToast('No se puede marcar como entregado un pedido que no ha sido pagado', 'warning');
+            return;
+        }
+
         if (nuevoEstado === 'anulado') {
             setConfirmModal({
                 isOpen: true,

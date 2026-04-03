@@ -125,7 +125,20 @@ const ModalDetallePago = ({ pedido, restaurante, onClose }) => {
                         <InfoItem icon={Calendar} label="Fecha Finalización" value={formatearFechaHora(pedido.fecha_finalizacion || pedido.created_at)} />
                         <InfoItem icon={User} label="Cliente" value={pedido.cliente_nombre || 'Cliente General'} />
                         <InfoItem icon={ShoppingBag} label="Tipo Servicio" value={pedido.tipo_servicio || 'Mostrador'} />
-                        <InfoItem icon={CreditCard} label="Método Pago" value={pedido.metodo_pago} />
+                        <InfoItem icon={CreditCard} label="Método Pago" value={
+                            pedido.metodo_pago && (pedido.metodo_pago.startsWith('[') || pedido.metodo_pago.startsWith('{')) ? (
+                                (() => {
+                                    try {
+                                        const pagosArr = JSON.parse(pedido.metodo_pago);
+                                        return pagosArr.map(p => `${p.metodo.toUpperCase()}: ${formatearMoneda(p.monto)}`).join(' | ');
+                                    } catch (e) {
+                                        return pedido.metodo_pago.toUpperCase();
+                                    }
+                                })()
+                            ) : (
+                                pedido.metodo_pago ? pedido.metodo_pago.toUpperCase() : '-'
+                            )
+                        } />
                     </div>
 
                     {/* Items Table */}

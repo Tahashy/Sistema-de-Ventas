@@ -422,7 +422,18 @@ const PanelLateralPedido = ({ pedido, restaurante, onClose, onCambiarEstado, onE
                                     color: '#1a202c',
                                     textTransform: 'capitalize'
                                 }}>
-                                    {pedido.metodo_pago}
+                                    {pedido.metodo_pago && (pedido.metodo_pago.startsWith('[') || pedido.metodo_pago.startsWith('{')) ? (
+                                        (() => {
+                                            try {
+                                                const pagosArr = JSON.parse(pedido.metodo_pago);
+                                                return pagosArr.map(p => `${p.metodo.toUpperCase()}: $${parseFloat(p.monto).toFixed(2)}`).join(' | ');
+                                            } catch (e) {
+                                                return pedido.metodo_pago.toUpperCase();
+                                            }
+                                        })()
+                                    ) : (
+                                        pedido.metodo_pago ? pedido.metodo_pago.toUpperCase() : '-'
+                                    )}
                                 </span>
                             </div>
                             <div style={{ display: 'flex', justifyContent: 'space-between' }}>
