@@ -141,6 +141,24 @@ const ModalDetallePago = ({ pedido, restaurante, onClose }) => {
                         } />
                     </div>
 
+                    {/* Motivo de Anulación (Solo para anulados) */}
+                    {pedido.estado === 'anulado' && pedido.motivo_anulacion && (
+                        <div style={{
+                            padding: '16px',
+                            backgroundColor: '#FFFBEB',
+                            border: '1px solid #FEF3C7',
+                            borderRadius: '12px',
+                            marginBottom: '24px'
+                        }}>
+                            <div style={{ fontSize: '0.7rem', fontWeight: '800', color: '#92400E', textTransform: 'uppercase', marginBottom: '4px' }}>
+                                ⚠️ Motivo de la Anulación:
+                            </div>
+                            <div style={{ fontSize: '0.95rem', color: '#B45309', fontWeight: '500', lineHeight: '1.4' }}>
+                                {pedido.motivo_anulacion}
+                            </div>
+                        </div>
+                    )}
+
                     {/* Items Table */}
                     <div style={{ marginBottom: '24px', border: '1px solid #e2e8f0', borderRadius: '8px', overflow: 'hidden' }}>
                         <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.9rem' }}>

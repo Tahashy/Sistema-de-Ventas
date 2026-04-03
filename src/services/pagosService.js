@@ -323,6 +323,7 @@ export const prepararDatosExportacion = async (restauranteId, filtros = {}) => {
                 'Total': pago.total,
                 'Método Pago': pago.metodo_pago || 'efectivo',
                 'Estado': pago.estado,
+                'Motivo Anulación': pago.motivo_anulacion || '-',
                 'Mesero': pago.usuarios?.nombre || '-'
             };
         });

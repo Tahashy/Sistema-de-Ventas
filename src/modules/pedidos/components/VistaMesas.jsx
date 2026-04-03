@@ -148,10 +148,29 @@ const VistaMesas = ({ restauranteId, onMesaClick }) => {
         setModalEditarMesa({ isOpen: true, mesa, nombre: mesa.numero_mesa });
     };
 
+    const extraerNombreMesa = (valor) => {
+        if (!valor) return '';
+        if (typeof valor !== 'string') return valor;
+        
+        // Si por error se guardó como JSON stringificado
+        if (valor.startsWith('{') && valor.includes('numero_mesa')) {
+            try {
+                const parsed = JSON.parse(valor);
+                return parsed.numero_mesa || valor;
+            } catch (e) {
+                return valor;
+            }
+        }
+        return valor;
+    };
+
     const guardarNombreMesa = async () => {
         const { mesa, nombre } = modalEditarMesa;
-        if (nombre && nombre !== mesa.numero_mesa) {
-            const { error } = await updateMesa(mesa.id, { numero_mesa: nombre });
+        const nombreLimpio = extraerNombreMesa(mesa.numero_mesa);
+        
+        if (nombre && nombre !== nombreLimpio) {
+            // ERROR CORREGIDO: Enviar solo el string 'nombre', no un objeto
+            const { error } = await updateMesa(mesa.id, nombre);
             if (error) {
                 showToast('Error al actualizar mesa', 'error');
             } else {
@@ -444,6 +463,15 @@ const VistaMesas = ({ restauranteId, onMesaClick }) => {
 // Componente TarjetaMesa (Simplificado para brevedad, mantener estilos originales)
 const TarjetaMesa = ({ mesa, onClick, calcularTiempo, disabled }) => {
     const disponible = mesa.estado === 'disponible';
+    
+    // Función auxiliar para limpiar nombres corruptos tipo JSON
+    const nombreLimpio = (() => {
+        const n = mesa.numero_mesa;
+        if (n && typeof n === 'string' && n.startsWith('{')) {
+            try { return JSON.parse(n).numero_mesa || n; } catch (e) { return n; }
+        }
+        return n;
+    })();
 
     return (
         <div
@@ -461,7 +489,7 @@ const TarjetaMesa = ({ mesa, onClick, calcularTiempo, disabled }) => {
         >
             <div style={{ textAlign: 'center' }}>
                 <span style={{ fontSize: '24px', display: 'block', marginBottom: '8px' }}>🪑</span>
-                <h4 style={{ margin: '0 0 8px 0', fontSize: '16px', fontWeight: '700' }}>{mesa.numero_mesa}</h4>
+                <h4 style={{ margin: '0 0 8px 0', fontSize: '16px', fontWeight: '700' }}>{nombreLimpio}</h4>
                 {!disponible && mesa.hora_inicio && (
                     <span style={{ fontSize: '12px', color: '#718096', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px' }}>
                         <Clock size={12} /> {calcularTiempo(mesa.hora_inicio)}

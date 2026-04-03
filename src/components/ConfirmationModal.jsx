@@ -1,8 +1,22 @@
 import React from 'react';
 import { AlertTriangle, Check, X } from 'lucide-react';
 
-const ConfirmationModal = ({ isOpen, onClose, onConfirm, title, message, type = 'danger', confirmText = 'Confirmar', cancelText = 'Cancelar' }) => {
+const ConfirmationModal = ({ 
+    isOpen, onClose, onConfirm, title, message, 
+    type = 'danger', confirmText = 'Confirmar', cancelText = 'Cancelar',
+    showInput = false, inputPlaceholder = "Escribe el motivo aquí...",
+    requiredInput = false
+}) => {
+    const [inputValue, setInputValue] = React.useState('');
+
     if (!isOpen) return null;
+
+    const handleConfirm = () => {
+        if (requiredInput && !inputValue.trim()) return;
+        onConfirm(inputValue);
+        setInputValue(''); // Reset for next time
+        onClose();
+    };
 
     const colors = type === 'danger' ? {
         bgIcon: '#FEE2E2',
@@ -33,7 +47,7 @@ const ConfirmationModal = ({ isOpen, onClose, onConfirm, title, message, type = 
                 borderRadius: '16px',
                 padding: '24px',
                 width: '100%',
-                maxWidth: '400px',
+                maxWidth: '420px',
                 boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)',
                 animation: 'scaleIn 0.2s ease-out',
                 display: 'flex',
@@ -60,20 +74,49 @@ const ConfirmationModal = ({ isOpen, onClose, onConfirm, title, message, type = 
 
                 <p style={{
                     fontSize: '14px', color: '#6B7280',
-                    margin: '0 0 24px 0', lineHeight: '1.5'
+                    margin: '0 0 20px 0', lineHeight: '1.5'
                 }}>
                     {message}
                 </p>
 
+                {showInput && (
+                    <div style={{ width: '100%', marginBottom: '24px' }}>
+                        <textarea
+                            autoFocus
+                            placeholder={inputPlaceholder}
+                            value={inputValue}
+                            onChange={(e) => setInputValue(e.target.value)}
+                            style={{
+                                width: '100%',
+                                minHeight: '100px',
+                                padding: '12px',
+                                borderRadius: '12px',
+                                border: '1px solid #D1D5DB',
+                                outline: 'none',
+                                fontSize: '14px',
+                                fontFamily: 'inherit',
+                                resize: 'none',
+                                transition: 'all 0.2s',
+                                focus: 'border-color: #D97706'
+                            }}
+                        />
+                        {requiredInput && !inputValue.trim() && (
+                            <p style={{ fontSize: '12px', color: '#DC2626', marginTop: '4px', textAlign: 'left' }}>
+                                * El motivo es obligatorio
+                            </p>
+                        )}
+                    </div>
+                )}
+
                 <div style={{ display: 'flex', gap: '12px', width: '100%' }}>
                     <button
-                        onClick={onClose}
+                        onClick={() => { setInputValue(''); onClose(); }}
                         style={{
                             flex: 1,
-                            padding: '10px 16px',
+                            padding: '12px 16px',
                             backgroundColor: 'white',
                             border: '1px solid #D1D5DB',
-                            borderRadius: '8px',
+                            borderRadius: '10px',
                             color: '#374151',
                             fontWeight: '600',
                             cursor: 'pointer',
@@ -86,16 +129,17 @@ const ConfirmationModal = ({ isOpen, onClose, onConfirm, title, message, type = 
                         {cancelText}
                     </button>
                     <button
-                        onClick={() => { onConfirm(); onClose(); }}
+                        onClick={handleConfirm}
+                        disabled={requiredInput && !inputValue.trim()}
                         style={{
                             flex: 1,
-                            padding: '10px 16px',
-                            backgroundColor: colors.btnBg,
+                            padding: '12px 16px',
+                            backgroundColor: requiredInput && !inputValue.trim() ? '#E5E7EB' : colors.btnBg,
                             border: 'none',
-                            borderRadius: '8px',
-                            color: 'white',
+                            borderRadius: '10px',
+                            color: requiredInput && !inputValue.trim() ? '#9CA3AF' : 'white',
                             fontWeight: '600',
-                            cursor: 'pointer',
+                            cursor: requiredInput && !inputValue.trim() ? 'not-allowed' : 'pointer',
                             fontSize: '14px',
                             display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px',
                             boxShadow: '0 1px 2px 0 rgba(0, 0, 0, 0.05)',

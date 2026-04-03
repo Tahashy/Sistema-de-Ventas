@@ -44,7 +44,7 @@ export const usePedidos = (restauranteId) => {
     }
   };
 
-  const cambiarEstadoPedido = async (pedidoId, nuevoEstado) => {
+  const cambiarEstadoPedido = async (pedidoId, nuevoEstado, motivo = null) => {
     try {
       const pedido = pedidos.find(p => p.id === pedidoId);
       if (!pedido) return;
@@ -53,6 +53,10 @@ export const usePedidos = (restauranteId) => {
       const esFinalizacion = estadosFinalizados.includes(nuevoEstado);
 
       let updateData = { estado: nuevoEstado };
+      
+      if (motivo) {
+        updateData.motivo_anulacion = motivo;
+      }
 
       if (esFinalizacion && !pedido.tiempo_preparacion) {
         const inicio = parseSupabaseTimestamp(pedido.created_at);

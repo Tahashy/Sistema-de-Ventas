@@ -59,9 +59,13 @@ const Pedidos = ({ restauranteId, restaurante, isAdmin, userId, openNewOrderModa
             setConfirmModal({
                 isOpen: true,
                 title: 'Anular Pedido',
-                message: '¿Estás seguro de anular este pedido?',
+                message: '¿Estás seguro de anular este pedido? Esta acción es irreversible.',
                 type: 'warning',
-                onConfirm: () => cambiarEstadoHook(id, nuevoEstado)
+                confirmText: 'Anular Pedido',
+                showInput: true,
+                requiredInput: true,
+                inputPlaceholder: 'Ingresa el motivo de la anulación (ej: Error de digitación, cliente canceló)...',
+                onConfirm: (motivo) => cambiarEstadoHook(id, nuevoEstado, motivo)
             });
         } else {
             cambiarEstadoHook(id, nuevoEstado);
@@ -643,6 +647,10 @@ const Pedidos = ({ restauranteId, restaurante, isAdmin, userId, openNewOrderModa
                 title={confirmModal.title}
                 message={confirmModal.message}
                 type={confirmModal.type}
+                confirmText={confirmModal.confirmText}
+                showInput={confirmModal.showInput}
+                requiredInput={confirmModal.requiredInput}
+                inputPlaceholder={confirmModal.inputPlaceholder}
             />
 
             {/* Componente oculto para impresión */}

@@ -108,6 +108,7 @@ const ModalNuevoPedido = ({ restauranteId, restaurante = { nombre: 'Restaurante'
     
     // Pagos compartidos
     const [pagos, setPagos] = useState([]);
+    const [notas, setNotas] = useState('');
     
     const [mesaSeleccionada, setMesaSeleccionada] = useState(mesa); // Mesa seleccionada actual
     const [mostrarSelectorMesa, setMostrarSelectorMesa] = useState(false);
@@ -174,6 +175,7 @@ const ModalNuevoPedido = ({ restauranteId, restaurante = { nombre: 'Restaurante'
             setPropina(pedidoAEditar.propina || 0);
             setServicio(pedidoAEditar.cargo_servicio || 0);
             setEmbalaje(pedidoAEditar.cargo_embalaje || 0);
+            setNotas(pedidoAEditar.notas || '');
             
             // Cargar pagos
             try {
@@ -279,13 +281,14 @@ const ModalNuevoPedido = ({ restauranteId, restaurante = { nombre: 'Restaurante'
                 restaurante_id: restauranteId,
                 // numero_pedido: se mantiene o genera
                 tipo: tipoPedido === 'mostrador' ? 'mostrador' : tipoPedido,
-                tipo_servicio: tipoPedido === 'mostrador' ? 'mostrador' : tipoPedido,
+                tipo_servicio: tipoPedido,
 
                 numero_mesa: (tipoPedido === 'mesa' && mesaSeleccionada) ? mesaSeleccionada.numero_mesa : null,
                 cliente_nombre: cliente.nombre || 'Cliente General',
                 cliente_celular: cliente.telefono,
                 direccion_delivery: cliente.direccion,
                 metodo_pago: pagos.length === 1 ? pagos[0].metodo : JSON.stringify(pagos),
+                notas: notas,
                 subtotal: totales.subtotal,
                 descuento: parseFloat(descuento || 0),
                 propina: parseFloat(propina || 0),
@@ -443,7 +446,7 @@ const ModalNuevoPedido = ({ restauranteId, restaurante = { nombre: 'Restaurante'
         }
 
         // Preparar estado para el componente oculto
-        setPrintConfig({ tipo: tipo, items: itemsParaImprimir });
+        setPrintConfig({ tipo: tipo, items: itemsParaImprimir, notas: notas });
 
         // Esperar un ciclo de render para que TicketImpresion se actualice con los nuevos props
         setTimeout(() => {
@@ -753,59 +756,58 @@ const ModalNuevoPedido = ({ restauranteId, restaurante = { nombre: 'Restaurante'
                         </div>
                     </div>
 
-                    {/* Lista Carrito */}
-                    <div style={{ flex: 1, overflowY: 'auto', padding: '20px' }}>
-                        {carrito.length === 0 ? (
-                            <div style={{ textAlign: 'center', color: '#9CA3AF', marginTop: '40px' }}>
-                                <ShoppingBag size={48} style={{ marginBottom: '16px', opacity: 0.5 }} />
-                                <p>Carrito vacío</p>
-                            </div>
-                        ) : (
-                            carrito.map((item) => (
-                                <div key={item.uniqueId} style={{
-                                    display: 'flex', gap: '12px', marginBottom: '16px',
-                                    paddingBottom: '16px', borderBottom: '1px dashed #E5E7EB'
-                                }}>
-                                    <div style={{
-                                        width: '24px', height: '24px', borderRadius: '6px',
-                                        backgroundColor: '#FF6B35', color: 'white', fontSize: '12px',
-                                        fontWeight: 'bold', display: 'flex', alignItems: 'center', justifyContent: 'center'
-                                    }}>
-                                        {item.cantidad}x
-                                    </div>
-                                    <div style={{ flex: 1 }}>
-                                        <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                                            <span style={{ fontWeight: '600', color: '#374151', fontSize: '14px' }}>{item.nombre}</span>
-                                            <span style={{ fontWeight: '600', color: '#374151', fontSize: '14px' }}>
-                                                {formatearMoneda(item.subtotal)}
-                                            </span>
-                                        </div>
-                                        {item.notas && <p style={{ margin: '4px 0 0 0', fontSize: '12px', color: '#6B7280' }}>📝 {item.notas}</p>}
-                                        {item.agregados?.length > 0 && (
-                                            <p style={{ margin: '2px 0 0 0', fontSize: '12px', color: '#059669' }}>
-                                                + {item.agregados.map(a => a.nombre).join(', ')}
-                                            </p>
-                                        )}
-                                        {/* Tag Nuevo si no estaba antes */}
-                                        {isEditing && !itemsOriginales.includes(item.uniqueId) && (
-                                            <span style={{ fontSize: '10px', background: '#DEF7EC', color: '#03543F', padding: '2px 6px', borderRadius: '4px', marginTop: '4px', display: 'inline-block' }}>Nuevo</span>
-                                        )}
-                                    </div>
-                                    <button
-                                        onClick={() => removerItem(item.uniqueId)}
-                                        style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '0 4px' }}
-                                    >
-                                        <Trash2 size={16} color="#EF4444" />
-                                    </button>
+                    {/* Área de Scroll: Productos, Pagos, Cargos y Notas */}
+                    <div style={{ flex: 1, overflowY: 'auto', padding: '0 20px 20px 20px' }}>
+                        {/* Lista Carrito */}
+                        <div style={{ paddingTop: '20px' }}>
+                            {carrito.length === 0 ? (
+                                <div style={{ textAlign: 'center', color: '#9CA3AF', marginTop: '40px' }}>
+                                    <ShoppingBag size={48} style={{ marginBottom: '16px', opacity: 0.5 }} />
+                                    <p>Carrito vacío</p>
                                 </div>
-                            ))
-                        )}
-                    </div>
+                            ) : (
+                                carrito.map((item) => (
+                                    <div key={item.uniqueId} style={{
+                                        display: 'flex', gap: '12px', marginBottom: '16px',
+                                        paddingBottom: '16px', borderBottom: '1px dashed #E5E7EB'
+                                    }}>
+                                        <div style={{
+                                            width: '24px', height: '24px', borderRadius: '6px',
+                                            backgroundColor: '#FF6B35', color: 'white', fontSize: '12px',
+                                            fontWeight: 'bold', display: 'flex', alignItems: 'center', justifyContent: 'center'
+                                        }}>
+                                            {item.cantidad}x
+                                        </div>
+                                        <div style={{ flex: 1 }}>
+                                            <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                                                <span style={{ fontWeight: '600', color: '#374151', fontSize: '14px' }}>{item.nombre}</span>
+                                                <span style={{ fontWeight: '600', color: '#374151', fontSize: '14px' }}>
+                                                    {formatearMoneda(item.subtotal)}
+                                                </span>
+                                            </div>
+                                            {item.notas && <p style={{ margin: '4px 0 0 0', fontSize: '12px', color: '#6B7280' }}>📝 {item.notas}</p>}
+                                            {item.agregados?.length > 0 && (
+                                                <p style={{ margin: '2px 0 0 0', fontSize: '12px', color: '#059669' }}>
+                                                    + {item.agregados.map(a => a.nombre).join(', ')}
+                                                </p>
+                                            )}
+                                            {isEditing && !itemsOriginales.includes(item.uniqueId) && (
+                                                <span style={{ fontSize: '10px', background: '#DEF7EC', color: '#03543F', padding: '2px 6px', borderRadius: '4px', marginTop: '4px', display: 'inline-block' }}>Nuevo</span>
+                                            )}
+                                        </div>
+                                        <button
+                                            onClick={() => removerItem(item.uniqueId)}
+                                            style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '0 4px' }}
+                                        >
+                                            <Trash2 size={16} color="#EF4444" />
+                                        </button>
+                                    </div>
+                                ))
+                            )}
+                        </div>
 
-                    {/* Footer */}
-                    <div style={{ padding: '20px', backgroundColor: '#F9FAFB', borderTop: '1px solid #E5E7EB' }}>
-                        {/* Pagos Compartidos */}
-                        <div style={{ marginBottom: '16px' }}>
+                        {/* Pagos Compartidos (Dentro del scroll) */}
+                        <div style={{ marginTop: '10px', padding: '16px', backgroundColor: '#F9FAFB', borderRadius: '12px', border: '1px solid #E5E7EB' }}>
                             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
                                 <label style={{ fontSize: '13px', fontWeight: '700', color: '#4A5568' }}>MÉTODOS DE PAGO</label>
                                 <button 
@@ -837,7 +839,7 @@ const ModalNuevoPedido = ({ restauranteId, restaurante = { nombre: 'Restaurante'
                                             <option value="plin">Plin</option>
                                             <option value="transferencia">Transferencia</option>
                                         </select>
-                                        <div style={{ position: 'relative', width: '120px' }}>
+                                        <div style={{ position: 'relative', width: '100px' }}>
                                             <span style={{ position: 'absolute', left: '8px', top: '50%', transform: 'translateY(-50%)', color: '#9CA3AF', fontSize: '12px' }}>$</span>
                                             <input 
                                                 type="number"
@@ -873,20 +875,44 @@ const ModalNuevoPedido = ({ restauranteId, restaurante = { nombre: 'Restaurante'
                             )}
                         </div>
 
-                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '20px' }}>
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', marginTop: '16px' }}>
                             <CargoAdicional icon={Heart} label="Propina" value={propina} onChange={setPropina} color="#EC4899" />
                             <CargoAdicional icon={Percent} label="Descuento" value={descuento} onChange={setDescuento} color="#F59E0B" />
                             <CargoAdicional icon={Box} label="Embalaje" value={embalaje} onChange={setEmbalaje} color="#8B5CF6" />
                             <CargoAdicional icon={HandPlatter} label="Servicio" value={servicio} onChange={setServicio} color="#3B82F6" />
                         </div>
 
-                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '16px' }}>
-                            <span style={{ fontWeight: '700', fontSize: '18px' }}>Total</span>
-                            <span style={{ fontWeight: '700', fontSize: '18px', color: '#FF6B35' }}>{formatearMoneda(totales.total)}</span>
+                        {/* Notas del Pedido */}
+                        <div style={{ marginTop: '16px', padding: '12px', backgroundColor: '#FFFBEB', borderRadius: '12px', border: '1px solid #FEF3C7' }}>
+                            <label style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '11px', fontWeight: '700', color: '#92400E', textTransform: 'uppercase', marginBottom: '8px' }}>
+                                <MessageCircle size={14} /> Notas del Pedido
+                            </label>
+                            <textarea
+                                value={notas}
+                                onChange={(e) => setNotas(e.target.value)}
+                                placeholder="Escribe instrucciones especiales aquí..."
+                                style={{
+                                    width: '100%', minHeight: '60px', padding: '10px', borderRadius: '8px',
+                                    border: '1px solid #FDE68A', fontSize: '13px', fontFamily: 'inherit',
+                                    outline: 'none', resize: 'none', backgroundColor: 'white', color: '#92400E'
+                                }}
+                            />
+                        </div>
+                    </div>
+
+                    {/* FIXED FOOTER: Total y Botones de Acción */}
+                    <div style={{ 
+                        padding: '16px 20px', 
+                        backgroundColor: 'white', 
+                        borderTop: '2px solid #F3F4F6',
+                        boxShadow: '0 -4px 6px -1px rgba(0, 0, 0, 0.05)'
+                    }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '12px', alignItems: 'center' }}>
+                            <span style={{ fontWeight: '800', fontSize: '16px', color: '#374151' }}>TOTAL</span>
+                            <span style={{ fontWeight: '800', fontSize: '22px', color: '#FF6B35' }}>{formatearMoneda(totales.total)}</span>
                         </div>
 
-                        {/* Botones de Acción */}
-                        <div style={{ display: 'flex', gap: '12px' }}>
+                        <div style={{ display: 'flex', gap: '8px' }}>
                             {isEditing && (
                                 <div style={{ display: 'flex', gap: '8px' }}>
                                     <PrintButton
@@ -895,7 +921,7 @@ const ModalNuevoPedido = ({ restauranteId, restaurante = { nombre: 'Restaurante'
                                         onClick={() => handlePrint('cocina')}
                                     />
                                     <PrintButton
-                                        label="Cliente"
+                                        label="Ticket"
                                         color="#3B82F6"
                                         onClick={() => handlePrint('cliente')}
                                     />
@@ -905,14 +931,14 @@ const ModalNuevoPedido = ({ restauranteId, restaurante = { nombre: 'Restaurante'
                                 onClick={handleSubmit}
                                 disabled={loading || carrito.length === 0}
                                 style={{
-                                    flex: 1, padding: '16px', borderRadius: '12px',
+                                    flex: 1, padding: '14px', borderRadius: '12px',
                                     background: 'linear-gradient(135deg, #FF6B35 0%, #F7931E 100%)',
-                                    border: 'none', color: 'white', fontSize: '16px', fontWeight: '700',
+                                    border: 'none', color: 'white', fontSize: '15px', fontWeight: '700',
                                     cursor: 'pointer', boxShadow: '0 4px 12px rgba(255,107,53,0.3)',
                                     opacity: loading || carrito.length === 0 ? 0.7 : 1
                                 }}
                             >
-                                {loading ? '...' : isEditing ? 'Guardar Cambios' : 'Crear Pedido'}
+                                {loading ? '...' : isEditing ? 'Guardar' : 'Crear Pedido'}
                             </button>
                         </div>
                     </div>
@@ -1027,7 +1053,8 @@ const ModalNuevoPedido = ({ restauranteId, restaurante = { nombre: 'Restaurante'
                     cargo_embalaje: parseFloat(embalaje || 0),
                     propina: parseFloat(propina || 0),
                     total: totales.total,
-                    metodo_pago: pagos.length === 1 ? pagos[0].metodo : JSON.stringify(pagos)
+                    metodo_pago: pagos.length === 1 ? pagos[0].metodo : JSON.stringify(pagos),
+                    notas: notas
                 }}
                 restaurante={restaurante}
                 tipoImpresion={printConfig.tipo}
