@@ -124,12 +124,6 @@ export const generarLinkWhatsapp = (pedido, restaurante) => {
 
   const telefonoLimpio = telefono.replace(/[^0-9]/g, '');
 
-  const formatDate = (dateString) => {
-    if (!dateString) return new Date().toLocaleDateString();
-    const date = new Date(dateString);
-    return `${date.toLocaleDateString()} ${date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
-  };
-
   // Emojis en Unicode para evitar errores de encoding
   const e = {
     rocket: '\uD83D\uDE80',
@@ -193,6 +187,9 @@ export const generarLinkWhatsapp = (pedido, restaurante) => {
 
     `${e.user} *CLIENTE*\n` +
     `*Nombre:* ${pedido.cliente_nombre || 'General'}\n` +
+    (pedido.cliente_celular ? `*Celular:* ${pedido.cliente_celular}\n` : '') +
+    `*Tipo:* ${pedido.tipo_servicio?.toUpperCase() || 'MOSTRADOR'}\n` +
+    ((pedido.numero_mesa || pedido.mesa) ? `*Mesa:* ${pedido.numero_mesa || pedido.mesa}\n` : '') +
     (pedido.direccion_delivery ? `${e.pin} *Dirección:* ${pedido.direccion_delivery}\n` : '') +
     (pedido.notas ? `${e.chat} *Nota:* ${pedido.notas}\n` : '') +
     `\n${e.cart} *DETALLE DEL PEDIDO*\n` +
