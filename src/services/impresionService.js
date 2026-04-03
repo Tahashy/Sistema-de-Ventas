@@ -3,7 +3,7 @@
  * Proporciona una conexión estable vía Websockets y soporte para comandos RAW (ESC/POS).
  */
 import * as qz from 'qz-tray';
-import { formatearFechaHora } from '../modules/pedidos/utils/pedidoHelpers';
+import { formatearFechaHora, sanitizarNombreMesa } from '../modules/pedidos/utils/pedidoHelpers';
 
 export const impresionService = {
     /**
@@ -149,8 +149,8 @@ export const impresionService = {
         data += "\n";
         data += char.left;
 
-        if (pedido.numero_mesa) {
-            data += char.boldOn + "MESA: " + pedido.numero_mesa + "\n" + char.boldOff;
+        if (pedido.numero_mesa || pedido.mesa) {
+            data += char.boldOn + "MESA: " + sanitizarNombreMesa(pedido.numero_mesa || pedido.mesa) + "\n" + char.boldOff;
         } else {
             data += "Cliente: " + (pedido.cliente_nombre || 'General') + "\n";
         }

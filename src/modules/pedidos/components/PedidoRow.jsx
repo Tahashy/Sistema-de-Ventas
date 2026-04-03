@@ -3,7 +3,7 @@
 import React from 'react';
 import { Edit, CheckCircle, XCircle, Trash2, Utensils, Package, Truck, ShoppingBag, Printer, MoreVertical, Ban, AlertCircle } from 'lucide-react';
 import ContadorTiempo from './ContadorTiempo';
-import { getEstadoColor } from '../utils/pedidoHelpers';
+import { getEstadoColor, sanitizarNombreMesa } from '../utils/pedidoHelpers';
 import DropdownButton from './DropdownButton';
 
 const tdStyle = {
@@ -61,7 +61,7 @@ const PedidoRow = ({ pedido, onCambiarEstado, onVerDetalle, onEliminar, onToggle
         </div>
       </td>
       <td style={tdStyle}>
-        {pedido.tipo === 'mesa' ? pedido.numero_mesa : pedido.cliente_nombre || '-'}
+        {pedido.tipo === 'mesa' ? sanitizarNombreMesa(pedido.numero_mesa || pedido.mesa) : pedido.cliente_nombre || '-'}
       </td>
       <td style={tdStyle}>
         <span style={{

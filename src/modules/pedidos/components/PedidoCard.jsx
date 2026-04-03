@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 import { Utensils, Package, Truck, ShoppingBag, MoreVertical, Printer, CheckCircle, Edit, Trash2, X } from 'lucide-react';
 import ContadorTiempo from './ContadorTiempo';
-import { getEstadoColor } from '../utils/pedidoHelpers';
+import { getEstadoColor, sanitizarNombreMesa } from '../utils/pedidoHelpers';
 
 const PedidoCard = ({ pedido, onCambiarEstado, onVerDetalle, onImprimir, onEditar, onEliminar, isAdmin, now }) => {
   const [showMenu, setShowMenu] = useState(false);
@@ -67,7 +67,7 @@ const PedidoCard = ({ pedido, onCambiarEstado, onVerDetalle, onImprimir, onEdita
             fontSize: '13px',
             color: '#718096'
           }}>
-            {pedido.tipo === 'mesa' ? `Mesa ${pedido.numero_mesa}` : pedido.cliente_nombre || 'Sin nombre'}
+            {pedido.tipo === 'mesa' ? `Mesa ${sanitizarNombreMesa(pedido.numero_mesa || pedido.mesa)}` : pedido.cliente_nombre || 'Sin nombre'}
           </p>
           <div style={{ marginTop: '8px' }}>
             <ContadorTiempo

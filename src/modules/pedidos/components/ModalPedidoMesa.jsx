@@ -5,6 +5,7 @@ import { X, Plus, Minus, Printer, DollarSign, Clock } from 'lucide-react';
 import { supabase } from '../../../services/supabaseClient';
 import { showToast } from '../../../components/Toast';
 import { liberarMesa } from '../../../services/mesasService';
+import { sanitizarNombreMesa } from '../utils/pedidoHelpers';
 import ModalAgregados from './ModalAgregados';
 import ConfirmationModal from '../../../components/ConfirmationModal';
 
@@ -208,7 +209,7 @@ const ModalPedidoMesa = ({ mesa, productos, onClose, onSuccess }) => {
                                 fontWeight: '700',
                                 color: '#1a202c'
                             }}>
-                                {mesa.numero_mesa}
+                                {sanitizarNombreMesa(mesa.numero_mesa)}
                             </h2>
                             <div style={{ display: 'flex', gap: '16px', fontSize: '13px', color: '#718096' }}>
                                 {mesa.mesero && (

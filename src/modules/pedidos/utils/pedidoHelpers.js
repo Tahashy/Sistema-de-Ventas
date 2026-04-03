@@ -118,6 +118,23 @@ export const obtenerRangoFechaLimaUTC = (fechaStr, esFin = false) => {
  * @param {Object} restaurante - Datos del restaurante
  * @returns {string|null} - URL completa o null si no hay teléfono
  */
+
+export const sanitizarNombreMesa = (nombre) => {
+  if (!nombre) return '';
+  if (typeof nombre !== 'string') return String(nombre);
+
+  // Si por error se guardó como JSON stringificado {"numero_mesa":"..."}
+  if (nombre.startsWith('{') && nombre.includes('numero_mesa')) {
+    try {
+      const parsed = JSON.parse(nombre);
+      return parsed.numero_mesa || nombre;
+    } catch (e) {
+      return nombre;
+    }
+  }
+  return nombre;
+};
+
 export const generarLinkWhatsapp = (pedido, restaurante) => {
   const telefono = pedido.cliente_celular || pedido.telefono || '';
   if (!telefono) return null;

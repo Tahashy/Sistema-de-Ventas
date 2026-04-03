@@ -1,5 +1,5 @@
 import React, { forwardRef } from 'react';
-import { formatearMoneda, formatearFechaHora } from '../utils/pedidoHelpers';
+import { formatearMoneda, formatearFechaHora, sanitizarNombreMesa } from '../utils/pedidoHelpers';
 
 const TicketImpresion = forwardRef(({ pedido, restaurante, tipoImpresion = 'cliente', itemsFiltrados = null }, ref) => {
     if (!pedido || !restaurante) return null;
@@ -73,7 +73,7 @@ const TicketImpresion = forwardRef(({ pedido, restaurante, tipoImpresion = 'clie
                             padding: isCocina ? '4px' : '0',
                             textAlign: isCocina ? 'center' : 'left'
                         }}>
-                            MESA: {pedido.numero_mesa || pedido.mesa}
+                            MESA: {sanitizarNombreMesa(pedido.numero_mesa || pedido.mesa)}
                         </div>
                     )}
                 </div>
