@@ -180,11 +180,16 @@ export const generarLinkWhatsapp = (pedido, restaurante) => {
   if (parseFloat(pedido.cargo_embalaje) > 0) extrasText += `\n${e.box} Embalaje: +${formatearMoneda(pedido.cargo_embalaje)}`;
   if (parseFloat(pedido.propina) > 0) extrasText += `\n${e.hand} Propina: +${formatearMoneda(pedido.propina)}`;
 
+  // Pago normalizado para WhatsApp
+  const metodoPagoText = pedido.metodo_pago && (pedido.metodo_pago.startsWith('[') || pedido.metodo_pago.startsWith('{'))
+    ? 'COMPARTIDO'
+    : (pedido.metodo_pago || '').toUpperCase();
+
   // Diseño final
   const message = `${e.rocket} *NUEVO PEDIDO: #${pedido.numero_pedido}* ${e.rocket}\n` +
     `--------------------------------\n` +
     `${e.store} *${restaurante.nombre || 'Restaurante'}*\n` +
-    `${e.calendar} ${formatDate(pedido.created_at)}\n\n` +
+    `${e.calendar} ${formatearFechaHora(pedido.created_at)}\n\n` +
 
     `${e.user} *CLIENTE*\n` +
     `*Nombre:* ${pedido.cliente_nombre || 'General'}\n` +
@@ -200,7 +205,7 @@ export const generarLinkWhatsapp = (pedido, restaurante) => {
     `${extrasText}\n\n` +
     `${e.fire} *TOTAL: ${formatearMoneda(total)}* ${e.fire}\n` +
     `--------------------------------\n` +
-    `${e.card} Pago: ${(pedido.metodo_pago || '').toUpperCase()}\n\n` +
+    `${e.card} Pago: ${metodoPagoText}\n\n` +
     `${e.hands} ¡Gracias por tu compra!`;
 
   return `https://wa.me/${telefonoLimpio}?text=${encodeURIComponent(message)}`;

@@ -81,7 +81,11 @@ export const usePagos = (restauranteId) => {
     // Exportar a Excel
     const exportarExcel = async () => {
         try {
-            const { data, error } = await prepararDatosExportacion(restauranteId, filtros);
+            const { data, error } = await prepararDatosExportacion(restauranteId, {
+                ...filtros,
+                fechaInicio: obtenerRangoFechaLimaUTC(filtros.fechaInicio),
+                fechaFin: obtenerRangoFechaLimaUTC(filtros.fechaFin, true)
+            });
             if (error) throw error;
             if (!data || data.length === 0) {
                 showToast('No hay datos para exportar', 'info');
