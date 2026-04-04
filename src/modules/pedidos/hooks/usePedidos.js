@@ -138,14 +138,29 @@ export const usePedidos = (restauranteId) => {
 
   const eliminarPedido = async (pedidoId) => {
     try {
+      // 1. Antes de borrar, buscar si hay una mesa ocupada por este pedido y liberarla
+      const { data: mesaOcupada } = await supabase
+        .from('mesas')
+        .select('id')
+        .eq('pedido_activo_id', pedidoId)
+        .maybeSingle();
+
+      if (mesaOcupada) {
+        await liberarMesa(mesaOcupada.id);
+      }
+
+      // 2. Ahora sí, borrar el pedido
       const { error } = await supabase
         .from('pedidos')
         .delete()
         .eq('id', pedidoId);
 
       if (error) throw error;
-      await cargarPedidos();
-      showToast('Pedido eliminado correctamente', 'success');
+      
+      // Actualización optimista local
+      setPedidos(prev => prev.filter(p => p.id !== pedidoId));
+      
+      showToast('Pedido eliminado y mesa liberada', 'success');
     } catch (error) {
       console.error('Error eliminando pedido:', error);
       showToast('Error al eliminar pedido', 'error');

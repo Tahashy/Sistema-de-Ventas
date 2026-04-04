@@ -208,6 +208,29 @@ export const liberarMesa = async (mesaId) => {
 };
 
 /**
+ * Liberar mesa por ID de pedido (cuando el pedido se entrega, anula o elimina automáticamente)
+ */
+export const liberarMesaPorPedido = async (pedidoId) => {
+    try {
+        const { error } = await supabase
+            .from('mesas')
+            .update({
+                estado: 'disponible',
+                pedido_activo_id: null,
+                mesero_asignado: null,
+                hora_inicio: null
+            })
+            .eq('pedido_activo_id', pedidoId);
+
+        if (error) throw error;
+        return { success: true, error: null };
+    } catch (error) {
+        console.error('Error liberando mesa por pedido:', error);
+        return { success: false, error };
+    }
+};
+
+/**
  * Obtener pedido activo de una mesa
  */
 export const getPedidoActivoMesa = async (mesaId) => {

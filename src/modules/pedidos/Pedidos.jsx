@@ -5,6 +5,7 @@ import { Plus, Search, ShoppingBag, Grid3x3, List } from 'lucide-react';
 import { supabase } from '../../services/supabaseClient';
 import { showToast } from '../../components/Toast';
 import useWindowSize from '../../hooks/useWindowSize';
+import { liberarMesaPorPedido } from '../../services/mesasService';
 
 // Componentes
 import StatCard from './components/StatCard';
@@ -42,18 +43,34 @@ const Pedidos = ({ restauranteId, restaurante, isAdmin, userId, openNewOrderModa
             title: 'Eliminar Pedido',
             message: '¿Estás seguro de eliminar este pedido permanentemente? Esta acción no se puede deshacer.',
             type: 'danger',
-            onConfirm: () => eliminarHook(id)
+            onConfirm: async () => {
+                await eliminarHook(id);
+                // Intentar liberar mesa por si acaso era de una mesa
+                await liberarMesaPorPedido(id);
+                handleSuccess();
+            }
         });
     };
 
-    const cambiarEstadoPedido = (id, nuevoEstado) => {
+    const cambiarEstadoPedido = async (id, nuevoEstado) => {
         // Buscar el pedido actual para validar pago si se intenta entregar
         const pedido = pedidos.find(p => p.id === id);
         
-        if (nuevoEstado === 'entregado' && !pedido.pagado) {
+        if (nuevoEstado === 'entregado' && !pedido?.pagado) {
             showToast('No se puede marcar como entregado un pedido que no ha sido pagado', 'warning');
             return;
         }
+
+        const handleFinalizar = async (motivo = null) => {
+            await cambiarEstadoHook(id, nuevoEstado, motivo);
+            
+            // Si el estado es final (entregado o anulado), liberamos la mesa
+            if (['entregado', 'anulado'].includes(nuevoEstado)) {
+                await liberarMesaPorPedido(id);
+            }
+            
+            handleSuccess();
+        };
 
         if (nuevoEstado === 'anulado') {
             setConfirmModal({
@@ -65,10 +82,10 @@ const Pedidos = ({ restauranteId, restaurante, isAdmin, userId, openNewOrderModa
                 showInput: true,
                 requiredInput: true,
                 inputPlaceholder: 'Ingresa el motivo de la anulación (ej: Error de digitación, cliente canceló)...',
-                onConfirm: (motivo) => cambiarEstadoHook(id, nuevoEstado, motivo)
+                onConfirm: (motivo) => handleFinalizar(motivo)
             });
         } else {
-            cambiarEstadoHook(id, nuevoEstado);
+            handleFinalizar();
         }
     };
     const { isMobile } = useWindowSize();
@@ -627,6 +644,16 @@ const Pedidos = ({ restauranteId, restaurante, isAdmin, userId, openNewOrderModa
                     <ModalPedidoMesa
                         mesa={mesaSeleccionada}
                         productos={productos}
+                        restaurante={restaurante}
+                        isAdmin={isAdmin}
+                        onCambiarEstado={cambiarEstadoPedido}
+                        onEliminar={eliminarPedido}
+                        onEditar={(pedido) => {
+                            setMostrarModalPedidoMesa(false);
+                            setMesaSeleccionada(null);
+                            setPedidoAEditar(pedido);
+                            setMostrarModalEditar(true);
+                        }}
                         onClose={() => {
                             setMostrarModalPedidoMesa(false);
                             setMesaSeleccionada(null);
