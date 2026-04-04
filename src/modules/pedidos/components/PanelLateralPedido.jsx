@@ -24,7 +24,7 @@ const PanelLateralPedido = ({ pedido, restaurante, onClose, onCambiarEstado, onE
         return icons[tipo] || '🛒';
     };
 
-    const handleImprimir = async (tipo) => {
+    const handleImprimir = async (tipo, reImprimirTodo = false) => {
         try {
             const tipoImpresion = tipo === 'cocina' ? 'cocina' : 'caja';
             const impresoras = impresorasService.getImpresorasPorTipo(tipoImpresion);
@@ -34,15 +34,50 @@ const PanelLateralPedido = ({ pedido, restaurante, onClose, onCambiarEstado, onE
                 return;
             }
 
+            let itemsAImprimir = [...(pedido.pedido_items || [])];
+
+            if (tipo === 'cocina' && !reImprimirTodo) {
+                itemsAImprimir = itemsAImprimir.filter(item => item.impreso === false);
+
+                if (itemsAImprimir.length === 0) {
+                    if (window.confirm('Todos los productos ya fueron impresos. ¿Deseas re-imprimir la comanda completa?')) {
+                        handleImprimir('cocina', true);
+                    }
+                    return;
+                }
+            }
+
             const ops = tipo === 'cocina'
-                ? impresionService.formatearComanda(pedido)
+                ? impresionService.formatearComanda({ ...pedido, pedido_items: itemsAImprimir })
                 : impresionService.formatearTicket(pedido, { restaurante: restaurante });
 
             for (const imp of impresoras) {
                 await impresionService.enviarAlPlugin(ops, imp.ip);
             }
-            showToast('Impresión enviada', 'success');
+
+            // Si se imprimieron nuevos items de cocina, marcarlos en DB
+            if (tipo === 'cocina' && itemsAImprimir.length > 0 && !reImprimirTodo) {
+                const itemIds = itemsAImprimir.map(i => i.id).filter(Boolean);
+                if (itemIds.length > 0) {
+                    const { supabase } = await import('../../../services/supabaseClient');
+                    await supabase
+                        .from('pedido_items')
+                        .update({ impreso: true })
+                        .in('id', itemIds);
+                    
+                    // Actualizar flag global en el pedido
+                    await supabase
+                        .from('pedidos')
+                        .update({ tiene_productos_sin_imprimir: false })
+                        .eq('id', pedido.id);
+                        
+                    showToast('Comanda enviada y productos actualizados', 'success');
+                }
+            } else {
+                showToast('Impresión enviada', 'success');
+            }
         } catch (error) {
+            console.error('Error al imprimir:', error);
             showToast(error.message, 'error');
         }
     };

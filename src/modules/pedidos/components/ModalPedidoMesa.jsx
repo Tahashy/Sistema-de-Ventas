@@ -136,7 +136,7 @@ const ModalPedidoMesa = ({
         }
     };
 
-    const handleImprimir = async (tipo) => {
+    const handleImprimir = async (tipo, reImprimirTodo = false) => {
         if (!pedido) return;
         try {
             const tipoImpresion = tipo === 'cocina' ? 'cocina' : 'caja';
@@ -147,15 +147,52 @@ const ModalPedidoMesa = ({
                 return;
             }
 
+            let itemsAImprimir = [...items];
+            
+            // Si es cocina, aplicar lógica incremental
+            if (tipo === 'cocina' && !reImprimirTodo) {
+                itemsAImprimir = items.filter(item => item.impreso === false);
+                
+                if (itemsAImprimir.length === 0) {
+                    if (window.confirm('Todos los productos de esta orden ya han sido impresos en cocina. ¿Deseas re-imprimir la comanda completa?')) {
+                        handleImprimir('cocina', true);
+                    }
+                    return;
+                }
+            }
+
             const ops = tipo === 'cocina'
-                ? impresionService.formatearComanda({ ...pedido, pedido_items: items })
+                ? impresionService.formatearComanda({ ...pedido, pedido_items: itemsAImprimir })
                 : impresionService.formatearTicket({ ...pedido, pedido_items: items }, { restaurante: restaurante });
 
             for (const imp of impresoras) {
                 await impresionService.enviarAlPlugin(ops, imp.ip);
             }
-            showToast('Impresión enviada', 'success');
+
+            // Si se imprimieron productos nuevos en cocina, marcarlos como impresos
+            if (tipo === 'cocina' && itemsAImprimir.length > 0 && !reImprimirTodo) {
+                const itemIds = itemsAImprimir.map(i => i.id).filter(id => id !== undefined);
+                
+                if (itemIds.length > 0) {
+                    await supabase
+                        .from('pedido_items')
+                        .update({ impreso: true })
+                        .in('id', itemIds);
+                    
+                    // Actualizar flag global en el pedido
+                    await supabase
+                        .from('pedidos')
+                        .update({ tiene_productos_sin_imprimir: false })
+                        .eq('id', pedido.id);
+                    
+                    // Refrescar el estado local
+                    cargarPedido();
+                }
+            }
+
+            showToast(reImprimirTodo ? 'Comanda completa re-enviada' : 'Impresión enviada', 'success');
         } catch (error) {
+            console.error('Error en impresión:', error);
             showToast(error.message, 'error');
         }
     };

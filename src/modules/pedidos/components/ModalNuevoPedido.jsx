@@ -191,9 +191,8 @@ const ModalNuevoPedido = ({ restauranteId, restaurante = { nombre: 'Restaurante'
             // Si tiene mesa
             if (pedidoAEditar.numero_mesa) {
                 setTipoPedido('mesa');
-                // Podríamos buscar la mesa real por número si necesitamos el objeto ID, 
-                // pero por ahora mostraremos el número
-                // setMesaSeleccionada({ numero_mesa: pedidoAEditar.numero_mesa });
+                // Restauramos el objeto mínimo para que la UI lo muestre y no se pierda al guardar
+                setMesaSeleccionada({ numero_mesa: pedidoAEditar.numero_mesa });
             }
 
         } catch (error) {
@@ -352,7 +351,8 @@ const ModalNuevoPedido = ({ restauranteId, restaurante = { nombre: 'Restaurante'
                 precio_unitario: item.precio,
                 subtotal: item.subtotal,
                 notas: item.notas,
-                agregados: item.agregados
+                agregados: item.agregados,
+                impreso: item.impreso === true // Preservar estado si ya estaba impreso
             }));
 
             const { error: errorItems } = await supabase
@@ -421,27 +421,22 @@ const ModalNuevoPedido = ({ restauranteId, restaurante = { nombre: 'Restaurante'
     };
 
     // Impresión
-    const handlePrint = async (tipo) => {
+    const handlePrint = async (tipo, reImprimirTodo = false) => {
         let itemsParaImprimir = carrito;
 
-        // Lógica inteligente para cocina en modo edición
-        if (tipo === 'cocina' && isEditing) {
-            // Filtrar solo los items que NO estaban en el pedido original (o modificados si tuvieramos esa lógica)
-            // Aquí asumimos que itemsOriginales tiene los uniqueId de los que ya existían
-            const nuevosItems = carrito.filter(item => !itemsOriginales.includes(item.uniqueId));
+        // Lógica inteligente para cocina
+        if (tipo === 'cocina' && !reImprimirTodo) {
+            // Filtrar items que NO han sido impresos
+            const nuevosItems = carrito.filter(item => item.impreso !== true);
 
             if (nuevosItems.length > 0) {
-                // Si hay nuevos, preguntamos o imprimimos solo nuevos por defecto para cocina
-                // Podríamos hacerlo configurable, pero la lógica solicitada es "mejorar esa lógica"
                 itemsParaImprimir = nuevosItems;
                 showToast(`Imprimiendo ${nuevosItems.length} items nuevos para cocina`, 'info');
             } else {
-                showToast('No hay items nuevos para cocina', 'info');
-                // Si el usuario fuerza imprimir cocina sin cambios, quizás quiera reimprimir todo?
-                // Por ahora, si no hay nuevos, imprimimos todo pero avisamos.
-                // O mejor, imprimimos todo si confirmamos?
-                // El requerimiento dice: "imprimir solo los agregados".
-                // Si no hay nuevos, imprimimos todo por si acaso sea una reimpresión manual.
+                if (window.confirm('Todos los productos ya han sido impresos. ¿Deseas re-imprimir la comanda completa?')) {
+                    handlePrint('cocina', true);
+                }
+                return;
             }
         }
 
@@ -449,9 +444,38 @@ const ModalNuevoPedido = ({ restauranteId, restaurante = { nombre: 'Restaurante'
         setPrintConfig({ tipo: tipo, items: itemsParaImprimir, notas: notas });
 
         // Esperar un ciclo de render para que TicketImpresion se actualice con los nuevos props
-        setTimeout(() => {
-            imprimir(ticketRef);
-        }, 100);
+        setTimeout(async () => {
+            await imprimir(ticketRef);
+
+            // Si se imprimieron items nuevos de cocina y el pedido ya existe, marcarlos como impresos en DB
+            if (tipo === 'cocina' && itemsParaImprimir.length > 0 && !reImprimirTodo) {
+                const pedidoId = pedidoConfirmado?.id || pedidoAEditar?.id;
+                if (pedidoId) {
+                    try {
+                        const idsParaActualizar = itemsParaImprimir
+                            .map(item => item.id || item.uniqueId)
+                            .filter(id => typeof id === 'number' || (typeof id === 'string' && id.length > 20)); // Asegurar que sea un ID válido de DB
+
+                        if (idsParaActualizar.length > 0) {
+                            await supabase
+                                .from('pedido_items')
+                                .update({ impreso: true })
+                                .in('id', idsParaActualizar)
+                                .eq('pedido_id', pedidoId);
+                            
+                            // Actualizar estado local
+                            setCarrito(prev => prev.map(item => 
+                                idsParaActualizar.includes(item.id || item.uniqueId) 
+                                    ? { ...item, impreso: true } 
+                                    : item
+                            ));
+                        }
+                    } catch (err) {
+                        console.error("Error al actualizar estado de impresión:", err);
+                    }
+                }
+            }
+        }, 150);
     };
 
 
