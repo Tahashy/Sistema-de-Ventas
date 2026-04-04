@@ -421,60 +421,52 @@ const ModalNuevoPedido = ({ restauranteId, restaurante = { nombre: 'Restaurante'
     };
 
     // Impresión
-    const handlePrint = async (tipo, reImprimirTodo = false) => {
+    const handlePrint = async (tipo, pedidoOverride = null) => {
         let itemsParaImprimir = carrito;
 
-        // Lógica inteligente para cocina
-        if (tipo === 'cocina' && !reImprimirTodo) {
-            // Filtrar items que NO han sido impresos
-            const nuevosItems = carrito.filter(item => item.impreso !== true);
-
-            if (nuevosItems.length > 0) {
-                itemsParaImprimir = nuevosItems;
-                showToast(`Imprimiendo ${nuevosItems.length} items nuevos para cocina`, 'info');
-            } else {
-                if (window.confirm('Todos los productos ya han sido impresos. ¿Deseas re-imprimir la comanda completa?')) {
-                    handlePrint('cocina', true);
-                }
-                return;
-            }
-        }
+        // Intentar obtener el pedido con ID más fresco
+        const pedidoData = pedidoOverride || pedidoConfirmado || pedidoAEditar;
 
         // Preparar estado para el componente oculto
         setPrintConfig({ tipo: tipo, items: itemsParaImprimir, notas: notas });
 
         // Esperar un ciclo de render para que TicketImpresion se actualice con los nuevos props
+        // Si hay pedidoOverride, forzamos un tiempo un poco mayor para asegurar renderizado
+        setTimeout(async () => {
+            await imprimir(ticketRef);
+        }, 300);
+    };
+
+    const handlePrintIndividual = async (item) => {
+        const pedidoId = pedidoConfirmado?.id || pedidoAEditar?.id;
+        if (!pedidoId) {
+            showToast('Debes guardar el pedido antes de imprimir comandas individuales', 'warning');
+            return;
+        }
+
+        // Preparar mini-pedido para imprimir un solo item
+        setPrintConfig({ tipo: 'cocina', items: [item], notas: notas });
+
         setTimeout(async () => {
             await imprimir(ticketRef);
 
-            // Si se imprimieron items nuevos de cocina y el pedido ya existe, marcarlos como impresos en DB
-            if (tipo === 'cocina' && itemsParaImprimir.length > 0 && !reImprimirTodo) {
-                const pedidoId = pedidoConfirmado?.id || pedidoAEditar?.id;
-                if (pedidoId) {
-                    try {
-                        const idsParaActualizar = itemsParaImprimir
-                            .map(item => item.id || item.uniqueId)
-                            .filter(id => typeof id === 'number' || (typeof id === 'string' && id.length > 20)); // Asegurar que sea un ID válido de DB
+            // Si el pedido existe en DB, marcar este item como impreso
+            const itemId = item.id || item.uniqueId;
+            const isIdValid = typeof itemId === 'number' || (typeof itemId === 'string' && itemId.length > 20);
 
-                        if (idsParaActualizar.length > 0) {
-                            await supabase
-                                .from('pedido_items')
-                                .update({ impreso: true })
-                                .in('id', idsParaActualizar)
-                                .eq('pedido_id', pedidoId);
-                            
-                            // Actualizar estado local
-                            setCarrito(prev => prev.map(item => 
-                                idsParaActualizar.includes(item.id || item.uniqueId) 
-                                    ? { ...item, impreso: true } 
-                                    : item
-                            ));
-                        }
-                    } catch (err) {
-                        console.error("Error al actualizar estado de impresión:", err);
-                    }
-                }
+            if (isIdValid) {
+                await supabase
+                    .from('pedido_items')
+                    .update({ impreso: true })
+                    .eq('id', itemId);
             }
+
+            // Actualizar estado local para que el icono cambie a gris
+            setCarrito(prev => prev.map(i => 
+                (i.id === itemId || i.uniqueId === itemId) ? { ...i, impreso: true } : i
+            ));
+            
+            showToast(`Comanda de ${item.nombre} enviada`, 'success');
         }, 150);
     };
 
@@ -819,12 +811,38 @@ const ModalNuevoPedido = ({ restauranteId, restaurante = { nombre: 'Restaurante'
                                                 <span style={{ fontSize: '10px', background: '#DEF7EC', color: '#03543F', padding: '2px 6px', borderRadius: '4px', marginTop: '4px', display: 'inline-block' }}>Nuevo</span>
                                             )}
                                         </div>
-                                        <button
-                                            onClick={() => removerItem(item.uniqueId)}
-                                            style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '0 4px' }}
-                                        >
-                                            <Trash2 size={16} color="#EF4444" />
-                                        </button>
+                                        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', alignItems: 'center' }}>
+                                            {(pedidoConfirmado || pedidoAEditar || isEditing) && (
+                                                <button
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        handlePrintIndividual(item);
+                                                    }}
+                                                    title={item.impreso ? "Re-imprimir este plato" : "Imprimir comanda de este plato"}
+                                                    style={{
+                                                        border: 'none',
+                                                        background: item.impreso ? '#F3F4F6' : '#FFF5F0',
+                                                        color: item.impreso ? '#9CA3AF' : '#FF6B35',
+                                                        width: '32px',
+                                                        height: '32px',
+                                                        borderRadius: '8px',
+                                                        display: 'flex',
+                                                        alignItems: 'center',
+                                                        justifyContent: 'center',
+                                                        cursor: 'pointer',
+                                                        transition: 'all 0.2s'
+                                                    }}
+                                                >
+                                                    <Printer size={16} />
+                                                </button>
+                                            )}
+                                            <button
+                                                onClick={() => removerItem(item.uniqueId)}
+                                                style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '0 4px' }}
+                                            >
+                                                <Trash2 size={16} color="#EF4444" />
+                                            </button>
+                                        </div>
                                     </div>
                                 ))
                             )}

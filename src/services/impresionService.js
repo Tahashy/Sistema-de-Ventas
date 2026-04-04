@@ -92,8 +92,13 @@ export const impresionService = {
 
             if (item.agregados && item.agregados.length > 0) {
                 item.agregados.forEach(ag => {
-                    data += `   + ${ag.nombre.substring(0, 25)}\n`;
+                    data += `   + ${(ag.nombre || '').substring(0, 25)}\n`;
                 });
+            }
+
+            // Notas del producto en el ticket de caja
+            if (item.notas) {
+                data += `   NOTA: ${item.notas}\n`;
             }
         });
 
@@ -161,22 +166,31 @@ export const impresionService = {
         data += "--------------------------------\n";
 
         (pedido.pedido_items || []).forEach(item => {
-            data += char.boldOn + item.cantidad + "x " + (item.producto_nombre || item.nombre) + "\n" + char.boldOff;
+            // Nombre del producto en negrita y tamaño grande
+            data += char.boldOn + item.cantidad + "x " + (item.producto_nombre || item.nombre || 'Producto') + "\n" + char.boldOff;
             
-            if (item.agregados && item.agregados.length > 0) {
-                // Notas y Agregados en Negrita
-                data += char.boldOn;
-                item.agregados.forEach(ag => {
-                    data += `  > +${ag.nombre}\n`;
+            // Notas del producto (comentario especial): INMEDIATAMENTE despues del nombre
+            // Se usa doble línea de resalte para que el cocinero no se lo pierda
+            const notasItem = item.notas || item.nota || item.comentario || null;
+            if (notasItem && notasItem.trim() !== '') {
+                data += char.boldOn + `  !! NOTA: ${notasItem.trim()} !!\n` + char.boldOff;
+            }
+
+            // Agregados/extras del producto
+            const agregados = item.agregados;
+            if (agregados && Array.isArray(agregados) && agregados.length > 0) {
+                agregados.forEach(ag => {
+                    const nombre = ag.nombre || ag.name || '';
+                    if (nombre) data += `  > +${nombre}\n`;
                 });
-                data += char.boldOff;
             }
-            if (item.notas) {
-                data += char.boldOn + `  NOTA: ${item.notas}\n` + char.boldOff;
-            }
+
+            data += "--------------------------------\n";
         });
 
-        if (pedido.notas) {
+        // Solo mostrar notas generales si hay más de 1 ítem (no es una impresión individual)
+        const esImpresionIndividual = (pedido.pedido_items || []).length === 1;
+        if (!esImpresionIndividual && pedido.notas) {
             data += "--------------------------------\n";
             data += char.center + char.boldOn + "NOTAS GENERALES:\n" + char.boldOff + char.left;
             data += char.boldOn + pedido.notas + "\n" + char.boldOff;

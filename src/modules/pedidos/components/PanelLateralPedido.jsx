@@ -10,7 +10,7 @@ import { showToast } from '../../../components/Toast';
 import DropdownButton from './DropdownButton';
 import TicketImpresion from './TicketImpresion';
 
-const PanelLateralPedido = ({ pedido, restaurante, onClose, onCambiarEstado, onEditar, onEliminar, isAdmin }) => {
+const PanelLateralPedido = ({ pedido, restaurante, onClose, onCambiarEstado, onEditar, onEliminar, isAdmin, onUpdate }) => {
     const isMobile = window.innerWidth < 768;
     const componentRef = useRef();
     const [vistaImpresion, setVistaImpresion] = useState('cliente');
@@ -24,7 +24,7 @@ const PanelLateralPedido = ({ pedido, restaurante, onClose, onCambiarEstado, onE
         return icons[tipo] || '🛒';
     };
 
-    const handleImprimir = async (tipo, reImprimirTodo = false) => {
+    const handleImprimir = async (tipo) => {
         try {
             const tipoImpresion = tipo === 'cocina' ? 'cocina' : 'caja';
             const impresoras = impresorasService.getImpresorasPorTipo(tipoImpresion);
@@ -34,18 +34,8 @@ const PanelLateralPedido = ({ pedido, restaurante, onClose, onCambiarEstado, onE
                 return;
             }
 
-            let itemsAImprimir = [...(pedido.pedido_items || [])];
-
-            if (tipo === 'cocina' && !reImprimirTodo) {
-                itemsAImprimir = itemsAImprimir.filter(item => item.impreso === false);
-
-                if (itemsAImprimir.length === 0) {
-                    if (window.confirm('Todos los productos ya fueron impresos. ¿Deseas re-imprimir la comanda completa?')) {
-                        handleImprimir('cocina', true);
-                    }
-                    return;
-                }
-            }
+            // OPCIÓN B: El botón general siempre imprime TODO el listado
+            const itemsAImprimir = [...(pedido.pedido_items || [])];
 
             const ops = tipo === 'cocina'
                 ? impresionService.formatearComanda({ ...pedido, pedido_items: itemsAImprimir })
@@ -55,33 +45,71 @@ const PanelLateralPedido = ({ pedido, restaurante, onClose, onCambiarEstado, onE
                 await impresionService.enviarAlPlugin(ops, imp.ip);
             }
 
-            // Si se imprimieron nuevos items de cocina, marcarlos en DB
-            if (tipo === 'cocina' && itemsAImprimir.length > 0 && !reImprimirTodo) {
-                const itemIds = itemsAImprimir.map(i => i.id).filter(Boolean);
-                if (itemIds.length > 0) {
-                    const { supabase } = await import('../../../services/supabaseClient');
+            // Si se imprimió en cocina, marcar como impresos todos los ítems pendientes
+            if (tipo === 'cocina') {
+                const { supabase } = await import('../../../services/supabaseClient');
+                const itemIdsPendientes = itemsAImprimir.filter(i => !i.impreso).map(i => i.id).filter(Boolean);
+                
+                if (itemIdsPendientes.length > 0) {
                     await supabase
                         .from('pedido_items')
                         .update({ impreso: true })
-                        .in('id', itemIds);
+                        .in('id', itemIdsPendientes);
                     
-                    // Actualizar flag global en el pedido
                     await supabase
                         .from('pedidos')
                         .update({ tiene_productos_sin_imprimir: false })
                         .eq('id', pedido.id);
-                        
-                    showToast('Comanda enviada y productos actualizados', 'success');
+                    
+                    if (onUpdate) onUpdate();
                 }
-            } else {
-                showToast('Impresión enviada', 'success');
             }
+
+            showToast('Impresión enviada', 'success');
         } catch (error) {
-            console.error('Error al imprimir:', error);
+            console.error('Error en impresión:', error);
             showToast(error.message, 'error');
         }
     };
 
+    const handleImprimirIndividual = async (item) => {
+        try {
+            const impresoras = impresorasService.getImpresorasPorTipo('cocina');
+            if (impresoras.length === 0) {
+                showToast('No hay impresoras de cocina configuradas', 'warning');
+                return;
+            }
+
+            // Crear objeto de pedido con UN SOLO producto
+            const pedidoIndividual = {
+                ...pedido,
+                notas: null, // OJO: No imprimir notas generales en comanda individual
+                pedido_items: [item]
+            };
+
+            const ops = impresionService.formatearComanda(pedidoIndividual);
+
+            for (const imp of impresoras) {
+                await impresionService.enviarAlPlugin(ops, imp.ip);
+            }
+
+            // Si no estaba impreso, marcarlo en DB
+            if (!item.impreso) {
+                const { supabase } = await import('../../../services/supabaseClient');
+                await supabase
+                    .from('pedido_items')
+                    .update({ impreso: true })
+                    .eq('id', item.id);
+                
+                if (onUpdate) onUpdate();
+            }
+
+            showToast(`Comanda de ${item.producto_nombre} enviada`, 'success');
+        } catch (error) {
+            console.error('Error impresión individual:', error);
+            showToast(error.message, 'error');
+        }
+    };
 
     const opcionesImpresion = [
         {
@@ -507,15 +535,38 @@ const PanelLateralPedido = ({ pedido, restaurante, onClose, onCambiarEstado, onE
                                         alignItems: 'flex-start',
                                         marginBottom: '4px'
                                     }}>
-                                        <p style={{
-                                            margin: 0,
-                                            fontSize: '15px',
-                                            fontWeight: '600',
-                                            color: '#1a202c',
-                                            flex: 1
-                                        }}>
-                                            {item.cantidad}x {item.producto_nombre}
-                                        </p>
+                                        <div style={{ flex: 1, display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                            <p style={{
+                                                margin: 0,
+                                                fontSize: '15px',
+                                                fontWeight: '600',
+                                                color: '#1a202c'
+                                            }}>
+                                                {item.cantidad}x {item.producto_nombre}
+                                            </p>
+                                            <button
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    handleImprimirIndividual(item);
+                                                }}
+                                                title={item.impreso ? "Re-imprimir este plato" : "Imprimir comanda de este plato"}
+                                                style={{
+                                                    border: 'none',
+                                                    background: item.impreso ? '#F3F4F6' : '#FFF5F0',
+                                                    color: item.impreso ? '#9CA3AF' : '#FF6B35',
+                                                    width: '26px',
+                                                    height: '26px',
+                                                    borderRadius: '6px',
+                                                    display: 'flex',
+                                                    alignItems: 'center',
+                                                    justifyContent: 'center',
+                                                    cursor: 'pointer',
+                                                    transition: 'all 0.2s'
+                                                }}
+                                            >
+                                                <Printer size={12} />
+                                            </button>
+                                        </div>
                                         <p style={{
                                             margin: 0,
                                             fontSize: '16px',

@@ -136,7 +136,7 @@ const ModalPedidoMesa = ({
         }
     };
 
-    const handleImprimir = async (tipo, reImprimirTodo = false) => {
+    const handleImprimir = async (tipo) => {
         if (!pedido) return;
         try {
             const tipoImpresion = tipo === 'cocina' ? 'cocina' : 'caja';
@@ -147,52 +147,77 @@ const ModalPedidoMesa = ({
                 return;
             }
 
-            let itemsAImprimir = [...items];
-            
-            // Si es cocina, aplicar lógica incremental
-            if (tipo === 'cocina' && !reImprimirTodo) {
-                itemsAImprimir = items.filter(item => item.impreso === false);
-                
-                if (itemsAImprimir.length === 0) {
-                    if (window.confirm('Todos los productos de esta orden ya han sido impresos en cocina. ¿Deseas re-imprimir la comanda completa?')) {
-                        handleImprimir('cocina', true);
-                    }
-                    return;
-                }
-            }
+            // OPCIÓN B: El botón general siempre imprime TODO el listado
+            const itemsAImprimir = [...items];
 
             const ops = tipo === 'cocina'
                 ? impresionService.formatearComanda({ ...pedido, pedido_items: itemsAImprimir })
-                : impresionService.formatearTicket({ ...pedido, pedido_items: items }, { restaurante: restaurante });
+                : impresionService.formatearTicket({ ...pedido, pedido_items: itemsAImprimir }, { restaurante: restaurante });
 
             for (const imp of impresoras) {
                 await impresionService.enviarAlPlugin(ops, imp.ip);
             }
 
-            // Si se imprimieron productos nuevos en cocina, marcarlos como impresos
-            if (tipo === 'cocina' && itemsAImprimir.length > 0 && !reImprimirTodo) {
-                const itemIds = itemsAImprimir.map(i => i.id).filter(id => id !== undefined);
+            // Si se imprimió en cocina, marcar como impresos todos los productos que estaban pendientes
+            if (tipo === 'cocina') {
+                const itemIdsPendientes = items.filter(i => !i.impreso).map(i => i.id).filter(Boolean);
                 
-                if (itemIds.length > 0) {
+                if (itemIdsPendientes.length > 0) {
                     await supabase
                         .from('pedido_items')
                         .update({ impreso: true })
-                        .in('id', itemIds);
+                        .in('id', itemIdsPendientes);
                     
-                    // Actualizar flag global en el pedido
                     await supabase
                         .from('pedidos')
                         .update({ tiene_productos_sin_imprimir: false })
                         .eq('id', pedido.id);
                     
-                    // Refrescar el estado local
                     cargarPedido();
                 }
             }
 
-            showToast(reImprimirTodo ? 'Comanda completa re-enviada' : 'Impresión enviada', 'success');
+            showToast('Impresión enviada', 'success');
         } catch (error) {
             console.error('Error en impresión:', error);
+            showToast(error.message, 'error');
+        }
+    };
+
+    const handleImprimirIndividual = async (producto) => {
+        try {
+            const impresoras = impresorasService.getImpresorasPorTipo('cocina');
+            if (impresoras.length === 0) {
+                showToast('No hay impresoras de cocina configuradas', 'warning');
+                return;
+            }
+
+            // Crear objeto de pedido con UN SOLO producto
+            const pedidoIndividual = {
+                ...pedido,
+                notas: null, // OJO: No imprimir notas generales en comanda individual
+                pedido_items: [producto]
+            };
+
+            const ops = impresionService.formatearComanda(pedidoIndividual);
+
+            for (const imp of impresoras) {
+                await impresionService.enviarAlPlugin(ops, imp.ip);
+            }
+
+            // Si no estaba impreso, marcarlo en DB
+            if (!producto.impreso) {
+                await supabase
+                    .from('pedido_items')
+                    .update({ impreso: true })
+                    .eq('id', producto.id);
+                
+                cargarPedido();
+            }
+
+            showToast(`Comanda de ${producto.producto_nombre} enviada`, 'success');
+        } catch (error) {
+            console.error('Error impresión individual:', error);
             showToast(error.message, 'error');
         }
     };
@@ -481,18 +506,52 @@ const ModalPedidoMesa = ({
                             <h3 style={{ margin: '0 0 16px 0', fontSize: '16px', fontWeight: '800', color: '#1e293b' }}>Productos ({items.length})</h3>
                             <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                                 {items.map((item, idx) => (
-                                    <div key={idx} style={{ padding: '14px', background: 'white', border: '1px solid #f1f5f9', borderRadius: '16px' }}>
+                                    <div key={idx} style={{ 
+                                        padding: '14px', 
+                                        background: 'white', 
+                                        border: '1px solid #f1f5f9', 
+                                        borderRadius: '16px',
+                                        position: 'relative' 
+                                    }}>
                                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                                            <p style={{ margin: 0, fontSize: '15px', fontWeight: '700', color: '#1e293b' }}>{item.cantidad}x {item.producto_nombre}</p>
+                                            <div style={{ flex: 1 }}>
+                                                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                                                    <p style={{ margin: 0, fontSize: '15px', fontWeight: '700', color: '#1e293b' }}>
+                                                        {item.cantidad}x {item.producto_nombre}
+                                                    </p>
+                                                    <button
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            handleImprimirIndividual(item);
+                                                        }}
+                                                        title={item.impreso ? "Re-imprimir este plato" : "Imprimir comanda de este plato"}
+                                                        style={{
+                                                            border: 'none',
+                                                            background: item.impreso ? '#f1f5f9' : '#fff7ed',
+                                                            color: item.impreso ? '#94a3b8' : '#f97316',
+                                                            width: '28px',
+                                                            height: '28px',
+                                                            borderRadius: '8px',
+                                                            display: 'flex',
+                                                            alignItems: 'center',
+                                                            justifyContent: 'center',
+                                                            cursor: 'pointer',
+                                                            transition: 'all 0.2s'
+                                                        }}
+                                                    >
+                                                        <Printer size={14} />
+                                                    </button>
+                                                </div>
+                                                {item.agregados?.length > 0 && (
+                                                    <div style={{ marginTop: '6px' }}>
+                                                        {item.agregados.map((ag, i) => (
+                                                            <p key={i} style={{ margin: '2px 0', fontSize: '12px', color: '#10B981', fontWeight: '600' }}>+ {ag.nombre}</p>
+                                                        ))}
+                                                    </div>
+                                                )}
+                                            </div>
                                             <p style={{ margin: 0, fontSize: '16px', fontWeight: '800', color: '#FF6B35' }}>{formatearMoneda(item.subtotal)}</p>
                                         </div>
-                                        {item.agregados?.length > 0 && (
-                                            <div style={{ marginTop: '6px' }}>
-                                                {item.agregados.map((ag, i) => (
-                                                    <p key={i} style={{ margin: '2px 0', fontSize: '12px', color: '#10B981', fontWeight: '600' }}>+ {ag.nombre}</p>
-                                                ))}
-                                            </div>
-                                        )}
                                     </div>
                                 ))}
                             </div>

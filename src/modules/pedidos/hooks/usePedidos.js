@@ -19,11 +19,14 @@ export const usePedidos = (restauranteId) => {
           *,
           pedido_items (
             id,
+            producto_id,
             cantidad,
             precio_unitario,
             subtotal,
             producto_nombre,
-            agregados
+            agregados,
+            notas,
+            impreso
           ),
           usuarios (
             nombre

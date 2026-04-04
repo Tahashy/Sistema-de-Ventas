@@ -97,6 +97,22 @@ const TicketImpresion = forwardRef(({ pedido, restaurante, tipoImpresion = 'clie
                                     {!isCocina && <span style={{ marginLeft: '8px' }}>{formatearMoneda(item.subtotal)}</span>}
                                 </div>
 
+                                {/* NOTA del producto - aparece primero, muy visible */}
+                                {(item.notas || item.nota || item.comentario) && (
+                                    <div style={{
+                                        fontSize: isCocina ? '16px' : '12px',
+                                        fontWeight: 'bold',
+                                        padding: '4px 6px',
+                                        marginTop: '4px',
+                                        background: isCocina ? '#000' : '#eee',
+                                        color: isCocina ? '#fff' : '#000',
+                                        borderLeft: '4px solid #000'
+                                    }}>
+                                        !! NOTA: {item.notas || item.nota || item.comentario}
+                                    </div>
+                                )}
+
+                                {/* Agregados/Extras */}
                                 {item.agregados && item.agregados.length > 0 && (
                                     <div style={{
                                         fontSize: isCocina ? '14px' : '11px',
@@ -104,20 +120,7 @@ const TicketImpresion = forwardRef(({ pedido, restaurante, tipoImpresion = 'clie
                                         marginTop: '2px',
                                         fontStyle: 'italic'
                                     }}>
-                                        {item.agregados.map(a => `+ ${a.nombre}`).join(', ')}
-                                    </div>
-                                )}
-
-                                {item.notas && (
-                                    <div style={{
-                                        fontSize: isCocina ? '16px' : '12px',
-                                        fontWeight: 'bold',
-                                        padding: '4px',
-                                        marginTop: '4px',
-                                        background: '#eee',
-                                        borderLeft: '4px solid black'
-                                    }}>
-                                        NOTA: {item.notas}
+                                        {item.agregados.map(a => `+ ${a.nombre || a.name || ''}`).join(', ')}
                                     </div>
                                 )}
                             </div>
@@ -125,8 +128,8 @@ const TicketImpresion = forwardRef(({ pedido, restaurante, tipoImpresion = 'clie
                     )}
                 </div>
 
-                {/* Notas Generales */}
-                {pedido.notas && (
+                {/* Notas Generales - Solo si NO es una impresión individual (más de 1 ítem) */}
+                {pedido.notas && itemsParaImprimir.length > 1 && (
                     <div style={{
                         marginBottom: '10px',
                         padding: '8px',
@@ -139,6 +142,7 @@ const TicketImpresion = forwardRef(({ pedido, restaurante, tipoImpresion = 'clie
                         <p style={{ margin: 0 }}>{pedido.notas}</p>
                     </div>
                 )}
+
 
                 {/* Totales - Solo si NO es cocina */}
                 {!isCocina && (
