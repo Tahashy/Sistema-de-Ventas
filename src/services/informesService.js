@@ -38,8 +38,14 @@ export const obtenerDatosInforme = async (restauranteId, fechaInicio, fechaFin, 
         for (let i = 0; i < 24; i++) horasMap[i] = { hora: i, total: 0, pedidos: 0 };
 
         ventas.forEach(p => {
-            // Análisis Horario
-            const hora = new Date(p.fecha_finalizacion || p.created_at).getHours();
+            // Análisis Horario - Forzado a horario de Lima (UTC-5)
+            const date = new Date(p.fecha_finalizacion || p.created_at);
+            const hora = parseInt(new Intl.DateTimeFormat('en-US', {
+                hour: 'numeric',
+                hour12: false,
+                timeZone: 'America/Lima'
+            }).format(date)) % 24; // % 24 handles edge cases if any (though Intl.DateTimeFormat with hour12: false should be 0-23 or 24)
+            
             if (horasMap[hora]) {
                 horasMap[hora].total += parseFloat(p.total);
                 horasMap[hora].pedidos += 1;

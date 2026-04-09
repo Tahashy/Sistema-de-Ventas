@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { obtenerDatosInforme, obtenerRankingCategorias } from '../../../services/informesService';
+import { obtenerRangoFechaLimaUTC } from '../../pedidos/utils/pedidoHelpers';
 import * as XLSX from 'xlsx';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
@@ -13,11 +14,21 @@ export const useInformes = (restauranteId) => {
         analisisHorarios: []
     });
 
-    // Rango por defecto: Hoy
+    // Helper para obtener fecha actual en formato YYYY-MM-DD de Lima
+    const getFechaLima = (fecha = new Date()) => {
+        return new Intl.DateTimeFormat('en-CA', {
+            timeZone: 'America/Lima',
+            year: 'numeric',
+            month: '2-digit',
+            day: '2-digit'
+        }).format(fecha);
+    };
+
+    // Rango por defecto: Hoy (en Lima)
     const [rango, setRango] = useState('hoy');
     const [fechas, setFechas] = useState({
-        inicio: new Date().toISOString().split('T')[0],
-        fin: new Date().toISOString().split('T')[0]
+        inicio: getFechaLima(),
+        fin: getFechaLima()
     });
 
     // Calcular fechas según rango seleccionado
@@ -29,45 +40,49 @@ export const useInformes = (restauranteId) => {
 
         switch (nuevoRango) {
             case 'hoy':
-                // Inicio y fin son hoy
+                const hoyLima = getFechaLima();
+                setFechas({ inicio: hoyLima, fin: hoyLima });
                 break;
             case 'ayer':
-                inicio.setDate(hoy.getDate() - 1);
-                fin.setDate(hoy.getDate() - 1);
+                const ayer = new Date();
+                ayer.setHours(ayer.getHours() - 24); // Retroceder un día
+                const ayerLima = getFechaLima(ayer);
+                setFechas({ inicio: ayerLima, fin: ayerLima });
                 break;
             case 'semana':
-                // Últimos 7 días
-                inicio.setDate(hoy.getDate() - 6);
+                const inicioSemana = new Date();
+                inicioSemana.setDate(inicioSemana.getDate() - 6);
+                setFechas({ inicio: getFechaLima(inicioSemana), fin: getFechaLima() });
                 break;
             case 'mes':
-                inicio.setDate(1); // Primer día del mes
+                const primerDiaMes = new Date();
+                // Necesitamos el primer día del mes en Lima
+                const year = new Intl.DateTimeFormat('en-US', { timeZone: 'America/Lima', year: 'numeric' }).format(new Date());
+                const month = new Intl.DateTimeFormat('en-US', { timeZone: 'America/Lima', month: '2-digit' }).format(new Date());
+                setFechas({ inicio: `${year}-${month}-01`, fin: getFechaLima() });
                 break;
             case 'ano':
-                inicio.setMonth(0, 1); // 1 de Enero
+                const yearSolo = new Intl.DateTimeFormat('en-US', { timeZone: 'America/Lima', year: 'numeric' }).format(new Date());
+                setFechas({ inicio: `${yearSolo}-01-01`, fin: getFechaLima() });
                 break;
             default:
                 break;
         }
-
-        // Ajustar horas para cubrir todo el día
-        inicio.setHours(0, 0, 0, 0);
-        fin.setHours(23, 59, 59, 999);
-
-        setFechas({
-            inicio: inicio.toISOString(),
-            fin: fin.toISOString()
-        });
     };
 
     const cargarDatos = useCallback(async () => {
         if (!restauranteId) return;
         setLoading(true);
         try {
+            // Convertir fechas YYYY-MM-DD a ISO UTC considerando Lima (-05:00)
+            const isoInicio = obtenerRangoFechaLimaUTC(fechas.inicio, false);
+            const isoFin = obtenerRangoFechaLimaUTC(fechas.fin, true);
+
             // Cargar datos generales y productos
-            const { data: generalData } = await obtenerDatosInforme(restauranteId, datesToIso(fechas.inicio), datesToIso(fechas.fin, true));
+            const { data: generalData } = await obtenerDatosInforme(restauranteId, isoInicio, isoFin);
 
             // Cargar categorías (query separada)
-            const { data: catsData } = await obtenerRankingCategorias(restauranteId, datesToIso(fechas.inicio), datesToIso(fechas.fin, true));
+            const { data: catsData } = await obtenerRankingCategorias(restauranteId, isoInicio, isoFin);
 
             setData({
                 ...generalData,
@@ -193,12 +208,3 @@ export const useInformes = (restauranteId) => {
     };
 };
 
-// Helper para asegurar formato ISO correcto para DB
-const datesToIso = (dateStr, endOfDay = false) => {
-    // Si viene string ISO completo, usarlo. Si viene YYYY-MM-DD construirlo.
-    if (dateStr.includes('T')) return dateStr;
-    const d = new Date(dateStr);
-    if (endOfDay) d.setHours(23, 59, 59, 999);
-    else d.setHours(0, 0, 0, 0);
-    return d.toISOString();
-};
