@@ -92,18 +92,10 @@ export const formatearFechaHora = (fecha) => {
  * Ajusta una fecha a formato ISO garantizando el rango de un día completo en Lima convertido a UTC
  */
 export const obtenerRangoFechaLimaUTC = (fechaStr, esFin = false) => {
-  const date = new Date(fechaStr + 'T00:00:00'); // Fecha local (Lima)
-  if (esFin) {
-    date.setHours(23, 59, 59, 999);
-  } else {
-    date.setHours(0, 0, 0, 0);
-  }
-
-  // Convertir a UTC restando el desfase manualmente o dejando que toISOString use el local del sistema
-  // Pero para ser más robusto si el servidor/cliente no está en Lima, lo forzamos.
-  // Lima es UTC-5. Así que sumamos 5 horas para llegar a UTC.
-  // Sin embargo, si el navegador YA está en Lima, toISOString() hará el trabajo correcto.
-  return date.toISOString();
+  // Construimos la fecha asumiendo que es Lima (UTC-5)
+  // Simplificado: YYYY-MM-DD + T00:00:00-05:00
+  const isoStr = `${fechaStr}T${esFin ? '23:59:59.999' : '00:00:00.000'}-05:00`;
+  return new Date(isoStr).toISOString();
 };
 
 /**
