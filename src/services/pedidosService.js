@@ -6,27 +6,29 @@ import { supabase } from './supabaseClient';
  */
 export const obtenerSiguienteCorrelativo = async (restauranteId) => {
     try {
-        // Obtenemos el inicio del día en Lima (UTC-5)
-        // Calculamos la fecha actual en Lima
-        const ahora = new Date();
-        const limaOffset = -5;
-        const horaLima = new Date(ahora.getTime() + (limaOffset * 60 * 60 * 1000) + (ahora.getTimezoneOffset() * 60 * 1000));
+        // Obtenemos la fecha actual en la zona horaria de Lima (YYYY-MM-DD)
+        const formatter = new Intl.DateTimeFormat('en-CA', { 
+            timeZone: 'America/Lima',
+            year: 'numeric', month: '2-digit', day: '2-digit'
+        });
+        const fechaLima = formatter.format(new Date());
 
-        // Formateamos YYYY-MM-DD del día en Lima
-        const fechaLima = horaLima.toISOString().split('T')[0];
+        // El inicio del día en Lima (00:00:00) convertido a UTC
+        const inicioUTC = new Date(`${fechaLima}T00:00:00-05:00`).toISOString();
 
-        // El inicio del día en Lima (00:00:00) es las 05:00:00 UTC
-        const inicioUTC = `${fechaLima}T05:00:00.000Z`;
-
-        const { count, error } = await supabase
+        // Obtenemos el último número de orden del día para evitar problemas si se borraron pedidos
+        const { data, error } = await supabase
             .from('pedidos')
-            .select('*', { count: 'exact', head: true })
+            .select('orden_dia')
             .eq('restaurante_id', restauranteId)
-            .gte('created_at', inicioUTC);
+            .gte('created_at', inicioUTC)
+            .order('orden_dia', { ascending: false })
+            .limit(1);
 
         if (error) throw error;
 
-        return (count || 0) + 1;
+        const maxOrden = data.length > 0 ? (data[0].orden_dia || 0) : 0;
+        return maxOrden + 1;
     } catch (error) {
         console.error('Error obteniendo correlativo:', error);
         return 1; // Fallback a 1
