@@ -114,7 +114,12 @@ export const generarLinkWhatsapp = (pedido, restaurante) => {
   const telefono = pedido.cliente_celular || pedido.telefono || '';
   if (!telefono) return null;
 
-  const telefonoLimpio = telefono.replace(/[^0-9]/g, '');
+  let telefonoLimpio = telefono.replace(/[^0-9]/g, '');
+  
+  // Si el número tiene 9 dígitos (formato estándar de Perú), agregamos el código +51
+  if (telefonoLimpio.length === 9) {
+    telefonoLimpio = '51' + telefonoLimpio;
+  }
 
   const formatDate = (dateString) => {
     if (!dateString) return new Date().toLocaleDateString();
@@ -167,6 +172,8 @@ export const generarLinkWhatsapp = (pedido, restaurante) => {
   const total = parseFloat(pedido.total || 0).toFixed(2);
 
   let extrasText = '';
+  if (parseFloat(pedido.costo_taper) > 0) extrasText += `\n${e.box} Taper(s): +${formatearMoneda(pedido.costo_taper)}`;
+  if (parseFloat(pedido.iva) > 0) extrasText += `\n${e.money} IGV/IVA: +${formatearMoneda(pedido.iva)}`;
   if (parseFloat(pedido.descuento) > 0) extrasText += `\n${e.label} Descuento: -${formatearMoneda(pedido.descuento)}`;
   if (parseFloat(pedido.cargo_servicio) > 0) extrasText += `\n${e.bell} Servicio: +${formatearMoneda(pedido.cargo_servicio)}`;
   if (parseFloat(pedido.cargo_embalaje) > 0) extrasText += `\n${e.box} Embalaje: +${formatearMoneda(pedido.cargo_embalaje)}`;
