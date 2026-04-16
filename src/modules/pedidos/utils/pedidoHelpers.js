@@ -98,19 +98,6 @@ export const obtenerRangoFechaLimaUTC = (fechaStr, esFin = false) => {
   return new Date(isoStr).toISOString();
 };
 
-/**
- * Genera el enlace de WhatsApp con el mensaje preformateado del pedido.
- * @param {Object} pedido - Objeto completo del pedido
- * @param {Object} restaurante - Datos del restaurante
- * @returns {string|null} - URL completa o null si no hay teléfono
- */
-/**
- * Genera el enlace de WhatsApp con el mensaje preformateado del pedido.
- * @param {Object} pedido - Objeto completo del pedido
- * @param {Object} restaurante - Datos del restaurante
- * @returns {string|null} - URL completa o null si no hay teléfono
- */
-
 export const sanitizarNombreMesa = (nombre) => {
   if (!nombre) return '';
   if (typeof nombre !== 'string') return String(nombre);
@@ -127,99 +114,79 @@ export const sanitizarNombreMesa = (nombre) => {
   return nombre;
 };
 
-export const generarLinkWhatsapp = (pedido, restaurante) => {
-  const telefono = pedido.cliente_celular || pedido.telefono || '';
-  if (!telefono) return null;
+/**
+ * Genera el enlace de WhatsApp con el mensaje preformateado del pedido.
+ * @param {Object} pedido - Objeto completo del pedido
+ * @param {Object} restaurante - Datos del restaurante
+ * @returns {string|null} - URL completa o null si no hay teléfono
+ */
+export const generarResumenWhatsApp = (pedido, restaurante) => {
+  console.log("🟢 v1.2 - Iniciando Generación de Resumen WhatsApp...");
 
-  let telefonoLimpio = telefono.replace(/[^0-9]/g, '');
-  
-  // Si el número tiene 9 dígitos (formato estándar de Perú), agregamos el código +51
-  if (telefonoLimpio.length === 9) {
-    telefonoLimpio = '51' + telefonoLimpio;
-  }
+  // 1. Limpieza de teléfono
+  const rawTel = pedido.cliente_celular || pedido.telefono || '';
+  if (!rawTel) return null;
+  let tel = rawTel.replace(/[^0-9]/g, '');
+  if (tel.length === 9) tel = '51' + tel;
 
-  // Emojis en Unicode para evitar errores de encoding
-  const e = {
-    rocket: '\uD83D\uDE80',
-    store: '\uD83C\uDFEA',
-    calendar: '\uD83D\uDCC5',
-    user: '\uD83D\uDC64',
-    pin: '\uD83D\uDCCD',
-    chat: '\uD83D\uDCAC',
-    cart: '\uD83D\uDED2',
-    item: '\uD83D\uDD38', // Orange diamond
-    money: '\uD83D\uDCB5',
-    fire: '\uD83D\uDD25',
-    label: '\uD83C\uDFF7',
-    bell: '\uD83D\uDECE',
-    box: '\uD83D\uDCE6',
-    hand: '\uD83E\uDD1D',
-    card: '\uD83D\uDCB3',
-    hands: '\uD83D\uDE4C'
+  // 2. INYECCIÓN DINÁMICA ES6 (Sintaxis ultra-segura \u{xxxx})
+  // Esta técnica es 'en caliente' y evita rombos por codificación de archivo
+  const E = {
+    ROCKET:   '\u{1F680}', STORE:    '\u{1F3EA}', CAL:      '\u{1F4C5}',
+    USER:     '\u{1F464}', PIN:      '\u{1F4CC}', CHAT:     '\u{1F4AC}',
+    CART:     '\u{1F6D2}', ITEM:     '\u{1F538}', MONEY:    '\u{1F4B5}',
+    FIRE:     '\u{1F525}', TAG:      '\u{1F3F7}', BELL:     '\u{1F6CE}',
+    BOX:      '\u{1F4E6}', HAND:     '\u{1F91D}', CARD:     '\u{1F4B3}',
+    HANDS:    '\u{1F64C}', MEMO:     '\u{1F4DD}'
   };
 
-  // Construcción de items
-  const itemsText = (pedido.pedido_items || []).map(item => {
-    let text = `${e.item} *${item.cantidad}x ${item.producto_nombre || item.nombre}*`;
+  const fmt = (d) => {
+    const f = d ? new Date(d) : new Date();
+    return `${f.toLocaleDateString()} ${f.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
+  };
 
-    // Agregados
-    if (item.agregados && item.agregados.length > 0) {
-      const agregadosText = item.agregados.map(ag => `   └ + ${ag.nombre}`).join('\n');
-      text += `\n${agregadosText}`;
-    }
-
-    // Notas
-    if (item.notas) {
-      text += `\n   📝 ${item.notas}`;
-    }
-
-    // Precio
-    text += `\n   ${e.money} ${formatearMoneda(parseFloat(item.subtotal || item.precio * item.cantidad))}`;
-
-    return text;
+  // 3. Bloque de Items
+  const itemsText = (pedido.pedido_items || []).map(it => {
+    let raw = `${E.ITEM} *${it.cantidad}x ${it.producto_nombre || it.nombre}*`;
+    if (it.agregados?.length > 0) raw += '\n' + it.agregados.map(a => `   └ + ${a.nombre}`).join('\n');
+    if (it.notas) raw += `\n   ${E.MEMO} ${it.notas}`;
+    raw += `\n   ${E.MONEY} ${formatearMoneda(parseFloat(it.subtotal || it.precio * it.cantidad))}`;
+    return raw;
   }).join('\n\n');
 
-  const subtotal = parseFloat(pedido.subtotal || 0).toFixed(2);
-  const total = parseFloat(pedido.total || 0).toFixed(2);
+  // 4. Bloque de Extras
+  let extras = '';
+  if (parseFloat(pedido.costo_taper) > 0) extras += `\n${E.BOX} Tapers: +${formatearMoneda(pedido.costo_taper)}`;
+  if (parseFloat(pedido.iva) > 0) extras += `\n${E.MONEY} IGV/IVA: +${formatearMoneda(pedido.iva)}`;
+  if (parseFloat(pedido.descuento) > 0) extras += `\n${E.TAG} Desc: -${formatearMoneda(pedido.descuento)}`;
+  if (parseFloat(pedido.cargo_servicio) > 0) extras += `\n${E.BELL} Serv: +${formatearMoneda(pedido.cargo_servicio)}`;
+  if (parseFloat(pedido.cargo_embalaje) > 0) extras += `\n${E.BOX} Emb: +${formatearMoneda(pedido.cargo_embalaje)}`;
+  if (parseFloat(pedido.propina) > 0) extras += `\n${E.HAND} Propina: +${formatearMoneda(pedido.propina)}`;
 
-  let extrasText = '';
-  if (parseFloat(pedido.costo_taper) > 0) extrasText += `\n${e.box} Taper(s): +${formatearMoneda(pedido.costo_taper)}`;
-  if (parseFloat(pedido.iva) > 0) extrasText += `\n${e.money} IGV/IVA: +${formatearMoneda(pedido.iva)}`;
-  if (parseFloat(pedido.descuento) > 0) extrasText += `\n${e.label} Descuento: -${formatearMoneda(pedido.descuento)}`;
-  if (parseFloat(pedido.cargo_servicio) > 0) extrasText += `\n${e.bell} Servicio: +${formatearMoneda(pedido.cargo_servicio)}`;
-  if (parseFloat(pedido.cargo_embalaje) > 0) extrasText += `\n${e.box} Embalaje: +${formatearMoneda(pedido.cargo_embalaje)}`;
-  if (parseFloat(pedido.propina) > 0) extrasText += `\n${e.hand} Propina: +${formatearMoneda(pedido.propina)}`;
-
-  // Pago normalizado para WhatsApp
-  const metodoPagoText = pedido.metodo_pago && (pedido.metodo_pago.startsWith('[') || pedido.metodo_pago.startsWith('{'))
-    ? 'COMPARTIDO'
-    : (pedido.metodo_pago || '').toUpperCase();
-
-  // Diseño final
-  const message = `${e.rocket} *NUEVO PEDIDO: #${pedido.numero_pedido}* ${e.rocket}\n` +
+  // 5. Cuerpo del Mensaje
+  const body = 
+    `${E.ROCKET} *NUEVO PEDIDO: #${pedido.numero_pedido}* ${E.ROCKET}\n` +
     `--------------------------------\n` +
-    `${e.store} *${restaurante.nombre || 'Restaurante'}*\n` +
-    `${e.calendar} ${formatearFechaHora(pedido.created_at)}\n\n` +
-
-    `${e.user} *CLIENTE*\n` +
+    `${E.STORE} *${restaurante.nombre || 'Restaurante'}*\n` +
+    `${E.CAL} ${fmt(pedido.created_at || pedido.fecha)}\n\n` +
+    `${E.USER} *CLIENTE*\n` +
     `*Nombre:* ${pedido.cliente_nombre || 'General'}\n` +
-    (pedido.cliente_celular ? `*Celular:* ${pedido.cliente_celular}\n` : '') +
-    `*Tipo:* ${pedido.tipo_servicio?.toUpperCase() || 'MOSTRADOR'}\n` +
-    ((pedido.numero_mesa || pedido.mesa) ? `*Mesa:* ${pedido.numero_mesa || pedido.mesa}\n` : '') +
-    (pedido.direccion_delivery ? `${e.pin} *Dirección:* ${pedido.direccion_delivery}\n` : '') +
-    (pedido.notas ? `${e.chat} *Nota:* ${pedido.notas}\n` : '') +
-    `\n${e.cart} *DETALLE DEL PEDIDO*\n` +
+    (pedido.direccion_delivery ? `${E.PIN} *Dir:* ${pedido.direccion_delivery}\n` : '') +
+    (pedido.notas ? `${E.CHAT} *Nota:* ${pedido.notas}\n` : '') +
+    `\n${E.CART} *DETALLE*\n` +
     `--------------------------------\n` +
     `${itemsText}\n` +
     `--------------------------------\n` +
-
-    `${e.money} *IMPORTE*\n` +
-    `Subtotal: ${formatearMoneda(subtotal)}` +
-    `${extrasText}\n\n` +
-    `${e.fire} *TOTAL: ${formatearMoneda(total)}* ${e.fire}\n` +
+    `${E.MONEY} *IMPORTE*\n` +
+    `Subtotal: ${formatearMoneda(pedido.subtotal || 0)}` +
+    `${extras}\n\n` +
+    `${E.FIRE} *TOTAL: ${formatearMoneda(pedido.total || 0)}* ${E.FIRE}\n` +
     `--------------------------------\n` +
-    `${e.card} Pago: ${metodoPagoText}\n\n` +
-    `${e.hands} ¡Gracias por tu compra!`;
+    `${E.CARD} Pago: ${(pedido.metodo_pago || '').toUpperCase()}\n\n` +
+    `${E.HANDS} ¡Gracias por tu compra!`;
 
-  return `https://wa.me/${telefonoLimpio}?text=${encodeURIComponent(message)}`;
+  // 6. Generación de Enlace con URL base de API
+  return `https://api.whatsapp.com/send?phone=${tel}&text=${encodeURIComponent(body)}`;
 };
+
+export const generarLinkWhatsapp = generarResumenWhatsApp;

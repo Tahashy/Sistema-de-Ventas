@@ -5,7 +5,8 @@ import {
 } from 'lucide-react';
 import { impresionService } from '../../../services/impresionService';
 import { impresorasService } from '../../../services/impresorasService';
-import { formatearFechaHora, getEstadoColor, generarLinkWhatsapp } from '../utils/pedidoHelpers';
+// v1.2 - Forzando actualización corregida de WhatsApp
+import { formatearFechaHora, getEstadoColor, generarResumenWhatsApp } from '../utils/pedidoHelpers';
 import { showToast } from '../../../components/Toast';
 import DropdownButton from './DropdownButton';
 import TicketImpresion from './TicketImpresion';
@@ -17,11 +18,11 @@ const PanelLateralPedido = ({ pedido, restaurante, onClose, onCambiarEstado, onE
 
     const getTipoIcon = (tipo) => {
         const icons = {
-            mesa: '🪑',
-            llevar: '📦',
-            delivery: '🚚'
+            mesa: String.fromCodePoint(0x1FA91),     // 🪑
+            llevar: String.fromCodePoint(0x1F4E6),   // 📦
+            delivery: String.fromCodePoint(0x1F69A)  // 🚚
         };
-        return icons[tipo] || '🛒';
+        return icons[tipo] || String.fromCodePoint(0x1F6D2); // 🛒
     };
 
     const handleImprimir = async (tipo) => {
@@ -340,11 +341,16 @@ const PanelLateralPedido = ({ pedido, restaurante, onClose, onCambiarEstado, onE
 
                         <button
                             onClick={() => {
-                                const url = generarLinkWhatsapp(pedido, restaurante);
-                                if (url) {
-                                    window.open(url, '_blank');
-                                } else {
-                                    showToast('El pedido no tiene número de teléfono', 'error');
+                                try {
+                                    const url = generarResumenWhatsApp(pedido, restaurante);
+                                    if (url) {
+                                        window.open(url, '_blank', 'noopener,noreferrer');
+                                    } else {
+                                        showToast('El pedido no tiene número de teléfono', 'error');
+                                    }
+                                } catch (error) {
+                                    console.error('Error al generar enlace de WhatsApp:', error);
+                                    showToast('Error al procesar el enlace de WhatsApp', 'error');
                                 }
                             }}
                             title="Enviar resumen detallado por WhatsApp"
@@ -420,7 +426,7 @@ const PanelLateralPedido = ({ pedido, restaurante, onClose, onCambiarEstado, onE
                             }}
                         >
                             <Edit size={20} />
-                            ✏️ MODIFICAR / AGREGAR ITEMS
+                            {String.fromCodePoint(0x270F)} MODIFICAR / AGREGAR ITEMS
                         </button>
                     </div>
                 )}

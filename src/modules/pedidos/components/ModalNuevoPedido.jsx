@@ -8,7 +8,7 @@ import {
 } from 'lucide-react';
 import { supabase } from '../../../services/supabaseClient';
 import { showToast } from '../../../components/Toast';
-import { generarNumeroPedido, formatearMoneda, generarLinkWhatsapp } from '../utils/pedidoHelpers';
+import { generarNumeroPedido, formatearMoneda, generarResumenWhatsApp } from '../utils/pedidoHelpers';
 import ModalPersonalizarProducto from './ModalPersonalizarProducto';
 import TicketImpresion from './TicketImpresion';
 import VistaMesasSelector from './VistaMesasSelector';
@@ -513,7 +513,7 @@ const ModalNuevoPedido = ({ restauranteId, restaurante = { nombre: 'Restaurante'
                             }}
                         >
                             <div style={{ marginBottom: '4px' }}>
-                                {cat === 'todo' ? '🍽️' : '🍔'}
+                                {cat === 'todo' ? String.fromCodePoint(0x1F37D) : String.fromCodePoint(0x1F354)}
                             </div>
                             {cat.toUpperCase()}
                         </button>
@@ -772,81 +772,57 @@ const ModalNuevoPedido = ({ restauranteId, restaurante = { nombre: 'Restaurante'
                         </div>
                     </div>
 
-                    {/* Área de Scroll: Productos, Pagos, Cargos y Notas */}
-                    <div style={{ flex: 1, overflowY: 'auto', padding: '0 20px 20px 20px' }}>
+                    {/* Cuerpo del Carrito (Scrollable) */}
+                    <div style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', backgroundColor: '#F9FAFB' }}>
+                        
                         {/* Lista Carrito */}
-                        <div style={{ paddingTop: '20px' }}>
-                            {carrito.length === 0 ? (
-                                <div style={{ textAlign: 'center', color: '#9CA3AF', marginTop: '40px' }}>
-                                    <ShoppingBag size={48} style={{ marginBottom: '16px', opacity: 0.5 }} />
-                                    <p>Carrito vacío</p>
-                                </div>
-                            ) : (
-                                carrito.map((item) => (
-                                    <div key={item.uniqueId} style={{
-                                        display: 'flex', gap: '12px', marginBottom: '16px',
-                                        paddingBottom: '16px', borderBottom: '1px dashed #E5E7EB'
+                        <div style={{ padding: '20px', flexShrink: 0 }}>
+                        {carrito.length === 0 ? (
+                            <div style={{ textAlign: 'center', color: '#9CA3AF', marginTop: '40px' }}>
+                                <ShoppingBag size={48} style={{ marginBottom: '16px', opacity: 0.5 }} />
+                                <p>Carrito vacío</p>
+                            </div>
+                        ) : (
+                            carrito.map((item) => (
+                                <div key={item.uniqueId} style={{
+                                    display: 'flex', gap: '12px', marginBottom: '16px',
+                                    paddingBottom: '16px', borderBottom: '1px dashed #E5E7EB'
+                                }}>
+                                    <div style={{
+                                        width: '24px', height: '24px', borderRadius: '6px',
+                                        backgroundColor: '#FF6B35', color: 'white', fontSize: '12px',
+                                        fontWeight: 'bold', display: 'flex', alignItems: 'center', justifyContent: 'center'
                                     }}>
-                                        <div style={{
-                                            width: '24px', height: '24px', borderRadius: '6px',
-                                            backgroundColor: '#FF6B35', color: 'white', fontSize: '12px',
-                                            fontWeight: 'bold', display: 'flex', alignItems: 'center', justifyContent: 'center'
-                                        }}>
-                                            {item.cantidad}x
-                                        </div>
-                                        <div style={{ flex: 1 }}>
-                                            <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                                                <span style={{ fontWeight: '600', color: '#374151', fontSize: '14px' }}>{item.nombre}</span>
-                                                <span style={{ fontWeight: '600', color: '#374151', fontSize: '14px' }}>
-                                                    {formatearMoneda(item.subtotal)}
-                                                </span>
-                                            </div>
-                                            {item.notas && <p style={{ margin: '4px 0 0 0', fontSize: '12px', color: '#6B7280' }}>📝 {item.notas}</p>}
-                                            {item.agregados?.length > 0 && (
-                                                <p style={{ margin: '2px 0 0 0', fontSize: '12px', color: '#059669' }}>
-                                                    + {item.agregados.map(a => a.nombre).join(', ')}
-                                                </p>
-                                            )}
-                                            {isEditing && !itemsOriginales.includes(item.uniqueId) && (
-                                                <span style={{ fontSize: '10px', background: '#DEF7EC', color: '#03543F', padding: '2px 6px', borderRadius: '4px', marginTop: '4px', display: 'inline-block' }}>Nuevo</span>
-                                            )}
-                                        </div>
-                                        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', alignItems: 'center' }}>
-                                            {(pedidoConfirmado || pedidoAEditar || isEditing) && (
-                                                <button
-                                                    onClick={(e) => {
-                                                        e.stopPropagation();
-                                                        handlePrintIndividual(item);
-                                                    }}
-                                                    title={item.impreso ? "Re-imprimir este plato" : "Imprimir comanda de este plato"}
-                                                    style={{
-                                                        border: 'none',
-                                                        background: item.impreso ? '#F3F4F6' : '#FFF5F0',
-                                                        color: item.impreso ? '#9CA3AF' : '#FF6B35',
-                                                        width: '32px',
-                                                        height: '32px',
-                                                        borderRadius: '8px',
-                                                        display: 'flex',
-                                                        alignItems: 'center',
-                                                        justifyContent: 'center',
-                                                        cursor: 'pointer',
-                                                        transition: 'all 0.2s'
-                                                    }}
-                                                >
-                                                    <Printer size={16} />
-                                                </button>
-                                            )}
-                                            <button
-                                                onClick={() => removerItem(item.uniqueId)}
-                                                style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '0 4px' }}
-                                            >
-                                                <Trash2 size={16} color="#EF4444" />
-                                            </button>
-                                        </div>
+                                        {item.cantidad}x
                                     </div>
-                                ))
-                            )}
-                        </div>
+                                    <div style={{ flex: 1 }}>
+                                        <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                                            <span style={{ fontWeight: '600', color: '#374151', fontSize: '14px' }}>{item.nombre}</span>
+                                            <span style={{ fontWeight: '600', color: '#374151', fontSize: '14px' }}>
+                                                {formatearMoneda(item.subtotal)}
+                                            </span>
+                                        </div>
+                                        {item.notas && <p style={{ margin: '4px 0 0 0', fontSize: '12px', color: '#6B7280' }}>📝 {item.notas}</p>}
+                                        {item.agregados?.length > 0 && (
+                                            <p style={{ margin: '2px 0 0 0', fontSize: '12px', color: '#059669' }}>
+                                                + {item.agregados.map(a => a.nombre).join(', ')}
+                                            </p>
+                                        )}
+                                        {/* Tag Nuevo si no estaba antes */}
+                                        {isEditing && !itemsOriginales.includes(item.uniqueId) && (
+                                            <span style={{ fontSize: '10px', background: '#DEF7EC', color: '#03543F', padding: '2px 6px', borderRadius: '4px', marginTop: '4px', display: 'inline-block' }}>Nuevo</span>
+                                        )}
+                                    </div>
+                                    <button
+                                        onClick={() => removerItem(item.uniqueId)}
+                                        style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '0 4px' }}
+                                    >
+                                        <Trash2 size={16} color="#EF4444" />
+                                    </button>
+                                </div>
+                            ))
+                        )}
+                    </div>
 
                         {/* Pagos Compartidos (Dentro del scroll) */}
                         <div style={{ marginTop: '10px', padding: '16px', backgroundColor: '#F9FAFB', borderRadius: '12px', border: '1px solid #E5E7EB' }}>
@@ -985,6 +961,7 @@ const ModalNuevoPedido = ({ restauranteId, restaurante = { nombre: 'Restaurante'
                         </div>
                     </div>
                 </div>
+            </div>
 
                 {/* OVERLAY DE ÉXITO */}
                 {mostrarConfirmacion && pedidoConfirmado && (
@@ -1004,8 +981,8 @@ const ModalNuevoPedido = ({ restauranteId, restaurante = { nombre: 'Restaurante'
                         <div style={{ display: 'flex', gap: '16px', width: '100%', maxWidth: '400px', flexDirection: 'column' }}>
                             <button
                                 onClick={() => {
-                                    const url = generarLinkWhatsapp(pedidoConfirmado, restaurante);
-                                    if (url) window.open(url, '_blank');
+                                    const url = generarResumenWhatsApp(pedidoConfirmado, restaurante);
+                                    if (url) window.open(url, '_blank', 'noopener,noreferrer');
                                     else showToast('El cliente no tiene teléfono registrado', 'warning');
                                 }}
                                 style={{
@@ -1054,7 +1031,6 @@ const ModalNuevoPedido = ({ restauranteId, restaurante = { nombre: 'Restaurante'
                         </div>
                     </div>
                 )}
-            </div>
 
             {productoAPersonalizar && (
                 <ModalPersonalizarProducto
@@ -1102,7 +1078,6 @@ const ModalNuevoPedido = ({ restauranteId, restaurante = { nombre: 'Restaurante'
                 tipoImpresion={printConfig.tipo}
                 itemsFiltrados={printConfig.items}
             />
-            {/* Cierre de fragmento o condicional pendiente por el reemplazo del Header */}
         </div>
     );
 };

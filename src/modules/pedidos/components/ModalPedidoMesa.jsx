@@ -14,7 +14,7 @@ import {
     sanitizarNombreMesa, 
     formatearMoneda,
     formatearFechaHora,
-    generarLinkWhatsapp,
+    generarResumenWhatsApp,
     getEstadoColor 
 } from '../utils/pedidoHelpers';
 import { impresionService } from '../../../services/impresionService';
@@ -427,7 +427,7 @@ const ModalPedidoMesa = ({
                             />
                             <button
                                 onClick={() => {
-                                    const url = generarLinkWhatsapp(pedido, restaurante);
+                                    const url = generarResumenWhatsApp(pedido, restaurante);
                                     url ? window.open(url, '_blank') : showToast('Sin número de cliente', 'error');
                                 }}
                                 style={{
