@@ -8,7 +8,7 @@ import {
 } from 'lucide-react';
 import { supabase } from '../../../services/supabaseClient';
 import { showToast } from '../../../components/Toast';
-import { generarNumeroPedido, formatearMoneda, generarLinkWhatsapp } from '../utils/pedidoHelpers';
+import { generarNumeroPedido, formatearMoneda, generarResumenWhatsApp } from '../utils/pedidoHelpers';
 import ModalPersonalizarProducto from './ModalPersonalizarProducto';
 import TicketImpresion from './TicketImpresion';
 import VistaMesasSelector from './VistaMesasSelector';
@@ -494,7 +494,7 @@ const ModalNuevoPedido = ({ restauranteId, restaurante = { nombre: 'Restaurante'
                             }}
                         >
                             <div style={{ marginBottom: '4px' }}>
-                                {cat === 'todo' ? '🍽️' : '🍔'}
+                                {cat === 'todo' ? String.fromCodePoint(0x1F37D) : String.fromCodePoint(0x1F354)}
                             </div>
                             {cat.toUpperCase()}
                         </button>
@@ -780,7 +780,7 @@ const ModalNuevoPedido = ({ restauranteId, restaurante = { nombre: 'Restaurante'
                                                 {formatearMoneda(item.subtotal)}
                                             </span>
                                         </div>
-                                        {item.notas && <p style={{ margin: '4px 0 0 0', fontSize: '12px', color: '#6B7280' }}>📝 {item.notas}</p>}
+                                        {item.notas && <p style={{ margin: '4px 0 0 0', fontSize: '12px', color: '#6B7280' }}>{String.fromCodePoint(0x1F4DD)} {item.notas}</p>}
                                         {item.agregados?.length > 0 && (
                                             <p style={{ margin: '2px 0 0 0', fontSize: '12px', color: '#059669' }}>
                                                 + {item.agregados.map(a => a.nombre).join(', ')}
@@ -936,8 +936,8 @@ const ModalNuevoPedido = ({ restauranteId, restaurante = { nombre: 'Restaurante'
                         <div style={{ display: 'flex', gap: '16px', width: '100%', maxWidth: '400px', flexDirection: 'column' }}>
                             <button
                                 onClick={() => {
-                                    const url = generarLinkWhatsapp(pedidoConfirmado, restaurante);
-                                    if (url) window.open(url, '_blank');
+                                    const url = generarResumenWhatsApp(pedidoConfirmado, restaurante);
+                                    if (url) window.open(url, '_blank', 'noopener,noreferrer');
                                     else showToast('El cliente no tiene teléfono registrado', 'warning');
                                 }}
                                 style={{
