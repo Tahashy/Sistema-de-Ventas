@@ -1395,55 +1395,68 @@ const ModalProducto = ({ producto, categorias, restauranteId, onClose, onSuccess
                             </button>
                         </div>
 
-                        {/* Lista de agregados */}
+                        {/* Lista de agregados en formato horizontal (chips) */}
                         {formData.agregados.length > 0 ? (
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                            <div style={{ 
+                                display: 'flex', 
+                                flexWrap: 'wrap', 
+                                gap: '8px',
+                                marginTop: '12px'
+                            }}>
                                 {formData.agregados.map(agregado => (
                                     <div
                                         key={agregado.id}
                                         style={{
                                             display: 'flex',
-                                            justifyContent: 'space-between',
                                             alignItems: 'center',
-                                            padding: '12px',
-                                            background: 'white',
-                                            borderRadius: '8px',
-                                            border: '1px solid #e2e8f0'
+                                            gap: '8px',
+                                            padding: '6px 12px',
+                                            background: '#f0fdf4', // Verde suave (Green 50)
+                                            borderRadius: '20px',
+                                            border: '1px solid #bbf7d0', // Green 200
+                                            boxShadow: '0 1px 2px rgba(0,0,0,0.05)',
+                                            animation: 'fadeIn 0.2s ease-in-out'
                                         }}
                                     >
-                                        <div>
-                                            <p style={{
-                                                margin: '0 0 2px 0',
-                                                fontSize: '14px',
+                                        <div style={{ display: 'flex', flexDirection: 'column' }}>
+                                            <span style={{
+                                                fontSize: '13px',
                                                 fontWeight: '600',
-                                                color: '#1a202c'
+                                                color: '#166534' // Green 800
                                             }}>
                                                 {agregado.nombre}
-                                            </p>
-                                            <p style={{
-                                                margin: 0,
-                                                fontSize: '13px',
+                                            </span>
+                                            <span style={{
+                                                fontSize: '11px',
                                                 color: '#10B981',
-                                                fontWeight: '600'
+                                                fontWeight: '700'
                                             }}>
                                                 +${parseFloat(agregado.precio).toFixed(2)}
-                                            </p>
+                                            </span>
                                         </div>
                                         <button
                                             type="button"
                                             onClick={() => eliminarAgregado(agregado.id)}
+                                            title="Eliminar"
                                             style={{
-                                                padding: '6px 10px',
-                                                background: '#FEE2E2',
+                                                width: '20px',
+                                                height: '20px',
+                                                borderRadius: '50%',
+                                                background: '#fee2e2',
                                                 border: 'none',
-                                                borderRadius: '6px',
-                                                color: '#EF4444',
+                                                color: '#ef4444',
                                                 fontSize: '12px',
-                                                fontWeight: '600',
-                                                cursor: 'pointer'
+                                                fontWeight: 'bold',
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                justifyContent: 'center',
+                                                cursor: 'pointer',
+                                                transition: 'all 0.2s'
                                             }}
+                                            onMouseOver={(e) => e.currentTarget.style.background = '#fecaca'}
+                                            onMouseOut={(e) => e.currentTarget.style.background = '#fee2e2'}
                                         >
-                                            Eliminar
+                                            <X size={12} />
                                         </button>
                                     </div>
                                 ))}

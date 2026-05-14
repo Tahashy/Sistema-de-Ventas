@@ -424,8 +424,8 @@ const Pedidos = ({ restauranteId, restaurante, isAdmin, userId, openNewOrderModa
                         {/* Estadísticas */}
                         <div className="stats-grid" style={{
                             display: 'grid',
-                            gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))',
-                            gap: isMobile ? '12px' : '20px',
+                            gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : 'repeat(auto-fit, minmax(150px, 1fr))',
+                            gap: isMobile ? '10px' : '20px',
                             marginBottom: '24px'
                         }}>
                             <StatCard title="Total" value={estadisticas.total} color="#3B82F6" />

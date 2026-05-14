@@ -8,7 +8,8 @@ import {
   Settings,
   LogOut,
   ChevronRight,
-  X
+  X,
+  Calculator
 } from 'lucide-react';
 import { useLanguage } from '../modules/configuracion/LanguageContext';
 import { useAuth } from '../modules/auth/AuthContext';
@@ -24,6 +25,7 @@ const Sidebar = ({ activeSection, setActiveSection, onLogout, user, isAdmin, sid
     { id: 'pedidos', label: t('pedidos'), icon: ShoppingBag },
     { id: 'productos', label: t('productos'), icon: Package },
     { id: 'pagos', label: t('pagos'), icon: CreditCard, adminOnly: true },
+    { id: 'caja', label: 'Caja', icon: Calculator, adminOnly: true },
     { id: 'informes', label: t('informes'), icon: BarChart3, adminOnly: true },
     { id: 'configuracion', label: t('configuracion'), icon: Settings, adminOnly: true },
   ];

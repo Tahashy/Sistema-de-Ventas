@@ -10,6 +10,7 @@ import Productos from './modules/productos/Productos';
 import Pedidos from './modules/pedidos/Pedidos';
 import Toast from './components/Toast';
 import Pagos from './modules/caja/Pagos';
+import Caja from './modules/caja/Caja';
 import Informes from './modules/informes/Informes';
 import Configuracion from './modules/configuracion/Configuracion';
 import useWindowSize from './hooks/useWindowSize';
@@ -21,6 +22,7 @@ const routes = [
   { path: '/pedidos', name: 'pedidos', element: Pedidos },
   { path: '/productos', name: 'productos', element: Productos },
   { path: '/pagos', name: 'pagos', element: Pagos },
+  { path: '/caja', name: 'caja', element: Caja },
   { path: '/informes', name: 'informes', element: Informes },
   { path: '/configuracion', name: 'configuracion', element: Configuracion },
 ];
@@ -146,6 +148,10 @@ function AppLayout() {
               <Route
                 path="/pagos"
                 element={<Pagos restauranteId={restaurante.id} restaurante={restaurante} />}
+              />
+              <Route
+                path="/caja"
+                element={<Caja restauranteId={restaurante.id} />}
               />
               <Route
                 path="/informes"

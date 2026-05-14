@@ -10,9 +10,9 @@ export const usePedidos = (restauranteId) => {
   const [pedidos, setPedidos] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  const cargarPedidos = async () => {
+  const cargarPedidos = async (silent = false) => {
     try {
-      setLoading(true);
+      if (!silent) setLoading(true);
       const { data, error } = await supabase
         .from('pedidos')
         .select(`
@@ -41,9 +41,9 @@ export const usePedidos = (restauranteId) => {
       setPedidos(data || []);
     } catch (error) {
       console.error('Error cargando pedidos:', error);
-      showToast('Error al cargar pedidos', 'error');
+      if (!silent) showToast('Error al cargar pedidos', 'error');
     } finally {
-      setLoading(false);
+      if (!silent) setLoading(false);
     }
   };
 
@@ -184,30 +184,18 @@ export const usePedidos = (restauranteId) => {
           if (payload.eventType === 'INSERT') {
             // Check if it matches our active filter
             if (['pendiente', 'preparando', 'listo'].includes(payload.new.estado)) {
-              // Fetch to get full relations (items, user) or optimistic add if simple
-              // For simplicity and correctness with relations, we reload or fetch single
-              cargarPedidos();
+              // Fetch to get full relations (items, user)
+              cargarPedidos(true);
             }
           } else if (payload.eventType === 'UPDATE') {
             const nuevoEstado = payload.new.estado;
             const id = payload.new.id;
 
-            // If updated to terminal, remove
             if (['entregado', 'cancelado', 'anulado'].includes(nuevoEstado)) {
               setPedidos(prev => prev.filter(p => p.id !== id));
             } else if (['pendiente', 'preparando', 'listo'].includes(nuevoEstado)) {
-              // If updated to active (maybe from something else, or just change), update/add
-              // We might need to fetch if it wasn't in list, but standard update:
-              setPedidos(prev => {
-                const exists = prev.find(p => p.id === id);
-                if (exists) {
-                  return prev.map(p => p.id === id ? { ...p, ...payload.new } : p);
-                } else {
-                  // New to list? Reload to be safe with relations
-                  cargarPedidos();
-                  return prev;
-                }
-              });
+              // Reload silently to ensure all relations (items) are updated
+              cargarPedidos(true);
             }
           } else if (payload.eventType === 'DELETE') {
             setPedidos(prev => prev.filter(p => p.id !== payload.old.id));

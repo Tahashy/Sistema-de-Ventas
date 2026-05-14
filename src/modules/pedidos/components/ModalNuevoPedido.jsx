@@ -228,10 +228,19 @@ const ModalNuevoPedido = ({ restauranteId, restaurante = { nombre: 'Restaurante'
         return { subtotal, total, vuelto };
     }, [carrito, descuento, propina, servicio, embalaje, montoRecibido]);
 
-    // Efecto para inicializar primer pago si está vacío
+    // Efecto para inicializar o sincronizar el primer pago con el total
     useEffect(() => {
-        if (pagos.length === 0 && totales.total > 0) {
-            setPagos([{ id: Date.now(), metodo: 'efectivo', monto: totales.total }]);
+        if (totales.total > 0) {
+            if (pagos.length === 0) {
+                // Inicialización por primera vez
+                setPagos([{ id: Date.now(), metodo: 'efectivo', monto: totales.total }]);
+            } else if (pagos.length === 1) {
+                // SI SOLO HAY UN PAGO: Mantenerlo sincronizado con el total automáticamente
+                // Esto evita que el usuario tenga que editar el monto cada vez que agrega un producto
+                setPagos(prev => [{ ...prev[0], monto: totales.total }]);
+            }
+        } else if (totales.total === 0 && pagos.length > 0) {
+            setPagos([]);
         }
     }, [totales.total]);
 
@@ -271,6 +280,13 @@ const ModalNuevoPedido = ({ restauranteId, restaurante = { nombre: 'Restaurante'
     const handleSubmit = async () => {
         if (carrito.length === 0) {
             showToast('El carrito está vacío', 'error');
+            return;
+        }
+
+        // Validar pagos
+        const pagadoYa = pagos.reduce((acc, p) => acc + parseFloat(p.monto || 0), 0);
+        if (Math.abs(pagadoYa - totales.total) > 0.1) {
+            showToast('El monto de pago no coincide con el total', 'warning');
             return;
         }
 
@@ -581,8 +597,12 @@ const ModalNuevoPedido = ({ restauranteId, restaurante = { nombre: 'Restaurante'
 
                     <div style={{
                         display: 'grid',
-                        gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))', // Slightly smaller min-width for mobile
-                        gap: '16px', overflowY: 'auto', flex: 1, paddingBottom: isMobile ? '80px' : '20px' // Padding for bottom bar
+                        gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : 'repeat(auto-fill, minmax(160px, 1fr))',
+                        gap: isMobile ? '12px' : '16px', 
+                        overflowY: 'auto', 
+                        flex: 1, 
+                        paddingBottom: isMobile ? '100px' : '20px',
+                        paddingInline: isMobile ? '4px' : '0'
                     }}>
                         {productosFiltrados.map(producto => (
                             <div
@@ -623,7 +643,7 @@ const ModalNuevoPedido = ({ restauranteId, restaurante = { nombre: 'Restaurante'
                     </div>
 
                     {/* Mobile Bottom Bar Cart Trigger */}
-                    {isMobile && carrito.length > 0 && (
+                    {isMobile && carrito.length > 0 && !showCart && (
                         <div style={{
                             position: 'absolute', bottom: '16px', left: '16px', right: '16px',
                             backgroundColor: '#1F2937', borderRadius: '16px', padding: '12px 20px',
@@ -638,7 +658,7 @@ const ModalNuevoPedido = ({ restauranteId, restaurante = { nombre: 'Restaurante'
                                 }}>
                                     {carrito.reduce((acc, item) => acc + item.cantidad, 0)}
                                 </div>
-                                <span style={{ color: 'white', fontWeight: '600' }}>Ver Pedido</span>
+                                <span style={{ color: 'white', fontWeight: '800', fontSize: '15px' }}>CONTINUAR</span>
                             </div>
                             <span style={{ color: 'white', fontWeight: 'bold', fontSize: '16px' }}>
                                 {formatearMoneda(totales.total)}
@@ -657,15 +677,26 @@ const ModalNuevoPedido = ({ restauranteId, restaurante = { nombre: 'Restaurante'
                 }}>
                     {/* Header Carrito */}
                     <div style={{ padding: '20px', borderBottom: '1px solid #E5E7EB', backgroundColor: '#F9FAFB' }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '16px' }}>
-                            <h3 style={{ margin: 0, fontSize: '18px', fontWeight: '700' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+                            <h3 style={{ margin: 0, fontSize: isMobile ? '20px' : '18px', fontWeight: '800', color: '#1F2937' }}>
                                 {isEditing ? `Editar #${pedidoAEditar.numero_pedido}` : 'Nuevo Pedido'}
                             </h3>
-                            {
-                                <button onClick={isMobile ? () => setShowCart(false) : onClose} style={{ background: 'none', border: 'none', cursor: 'pointer' }}>
-                                    <X size={20} color="#6B7280" />
-                                </button>
-                            }
+                            <button 
+                                onClick={isMobile ? () => setShowCart(false) : onClose} 
+                                style={{ 
+                                    background: '#F3F4F6', 
+                                    border: 'none', 
+                                    borderRadius: '50%', 
+                                    width: '36px', 
+                                    height: '36px', 
+                                    display: 'flex', 
+                                    alignItems: 'center', 
+                                    justifyContent: 'center',
+                                    cursor: 'pointer' 
+                                }}
+                            >
+                                <X size={20} color="#4B5563" />
+                            </button>
                         </div>
 
                         {/* Tipos */}
@@ -893,7 +924,12 @@ const ModalNuevoPedido = ({ restauranteId, restaurante = { nombre: 'Restaurante'
                             )}
                         </div>
 
-                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', marginTop: '16px' }}>
+                        <div style={{ 
+                            display: 'grid', 
+                            gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', 
+                            gap: '12px', 
+                            marginTop: '16px' 
+                        }}>
                             <CargoAdicional icon={Heart} label="Propina" value={propina} onChange={setPropina} color="#EC4899" />
                             <CargoAdicional icon={Percent} label="Descuento" value={descuento} onChange={setDescuento} color="#F59E0B" />
                             <CargoAdicional icon={Box} label="Embalaje" value={embalaje} onChange={setEmbalaje} color="#8B5CF6" />
@@ -925,9 +961,9 @@ const ModalNuevoPedido = ({ restauranteId, restaurante = { nombre: 'Restaurante'
                         borderTop: '2px solid #F3F4F6',
                         boxShadow: '0 -4px 6px -1px rgba(0, 0, 0, 0.05)'
                     }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '12px', alignItems: 'center' }}>
-                            <span style={{ fontWeight: '800', fontSize: '16px', color: '#374151' }}>TOTAL</span>
-                            <span style={{ fontWeight: '800', fontSize: '22px', color: '#FF6B35' }}>{formatearMoneda(totales.total)}</span>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '16px', alignItems: 'center' }}>
+                            <span style={{ fontWeight: '800', fontSize: isMobile ? '18px' : '16px', color: '#374151' }}>TOTAL</span>
+                            <span style={{ fontWeight: '900', fontSize: isMobile ? '28px' : '22px', color: '#FF6B35' }}>{formatearMoneda(totales.total)}</span>
                         </div>
 
                         <div style={{ display: 'flex', gap: '8px' }}>
@@ -949,14 +985,22 @@ const ModalNuevoPedido = ({ restauranteId, restaurante = { nombre: 'Restaurante'
                                 onClick={handleSubmit}
                                 disabled={loading || carrito.length === 0}
                                 style={{
-                                    flex: 1, padding: '14px', borderRadius: '12px',
+                                    flex: 1, 
+                                    padding: isMobile ? '18px' : '14px', 
+                                    borderRadius: '12px',
                                     background: 'linear-gradient(135deg, #FF6B35 0%, #F7931E 100%)',
-                                    border: 'none', color: 'white', fontSize: '15px', fontWeight: '700',
-                                    cursor: 'pointer', boxShadow: '0 4px 12px rgba(255,107,53,0.3)',
-                                    opacity: loading || carrito.length === 0 ? 0.7 : 1
+                                    border: 'none', 
+                                    color: 'white', 
+                                    fontSize: isMobile ? '18px' : '15px', 
+                                    fontWeight: '800',
+                                    cursor: 'pointer', 
+                                    boxShadow: '0 4px 12px rgba(255,107,53,0.3)',
+                                    opacity: loading || carrito.length === 0 ? 0.7 : 1,
+                                    textTransform: 'uppercase',
+                                    letterSpacing: '0.5px'
                                 }}
                             >
-                                {loading ? '...' : isEditing ? 'Guardar' : 'Crear Pedido'}
+                                {loading ? 'Procesando...' : isEditing ? 'Guardar Cambios' : 'Confirmar y Crear Pedido'}
                             </button>
                         </div>
                     </div>

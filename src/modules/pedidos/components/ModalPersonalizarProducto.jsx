@@ -48,9 +48,14 @@ const ModalPersonalizarProducto = ({ producto, onClose, onConfirmar }) => {
             padding: '20px'
         }}>
             <div style={{
-                backgroundColor: 'white', borderRadius: '16px',
-                width: '100%', maxWidth: '450px',
-                maxHeight: '90vh', display: 'flex', flexDirection: 'column',
+                backgroundColor: 'white', 
+                borderRadius: window.innerWidth < 640 ? '0' : '16px',
+                width: '100%', 
+                maxWidth: '450px',
+                height: window.innerWidth < 640 ? '100%' : 'auto',
+                maxHeight: window.innerWidth < 640 ? '100%' : '90vh', 
+                display: 'flex', 
+                flexDirection: 'column',
                 boxShadow: '0 20px 25px -5px rgba(0,0,0,0.1)',
                 animation: 'slideUp 0.3s ease-out'
             }}>
@@ -92,7 +97,11 @@ const ModalPersonalizarProducto = ({ producto, onClose, onConfirmar }) => {
                             <h4 style={{ margin: '0 0 12px 0', fontSize: '1rem', color: '#4a5568' }}>
                                 Agregados
                             </h4>
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                            <div style={{ 
+                                display: 'flex', 
+                                flexWrap: 'wrap', 
+                                gap: '10px' 
+                            }}>
                                 {agregadosDisponibles.map((agregado, idx) => {
                                     const isSelected = agregadosSeleccionados.find(a => a.nombre === agregado.nombre);
                                     return (
@@ -100,17 +109,31 @@ const ModalPersonalizarProducto = ({ producto, onClose, onConfirmar }) => {
                                             key={idx}
                                             onClick={() => toggleAgregado(agregado)}
                                             style={{
-                                                padding: '12px', borderRadius: '10px',
-                                                border: `2px solid ${isSelected ? '#FF6B35' : '#e2e8f0'}`,
-                                                backgroundColor: isSelected ? '#fff5f0' : 'white',
-                                                display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-                                                cursor: 'pointer', transition: 'all 0.2s'
+                                                padding: '8px 14px', 
+                                                borderRadius: '20px',
+                                                border: `1.5px solid ${isSelected ? '#bbf7d0' : '#e2e8f0'}`,
+                                                backgroundColor: isSelected ? '#f0fdf4' : 'white',
+                                                display: 'flex', 
+                                                flexDirection: 'column',
+                                                alignItems: 'center',
+                                                cursor: 'pointer', 
+                                                transition: 'all 0.2s',
+                                                minWidth: '80px',
+                                                boxShadow: isSelected ? '0 2px 4px rgba(16, 185, 129, 0.1)' : 'none'
                                             }}
                                         >
-                                            <span style={{ fontWeight: isSelected ? '600' : '400', color: isSelected ? '#FF6B35' : '#4a5568' }}>
+                                            <span style={{ 
+                                                fontSize: '13px',
+                                                fontWeight: isSelected ? '700' : '500', 
+                                                color: isSelected ? '#166534' : '#4a5568' 
+                                            }}>
                                                 {agregado.nombre}
                                             </span>
-                                            <span style={{ fontWeight: '600', color: '#4a5568' }}>
+                                            <span style={{ 
+                                                fontSize: '11px',
+                                                fontWeight: '700', 
+                                                color: isSelected ? '#10B981' : '#a0aec0' 
+                                            }}>
                                                 +{formatearMoneda(agregado.precio)}
                                             </span>
                                         </div>
