@@ -186,17 +186,17 @@ const VistaMesas = ({ restauranteId, onMesaClick }) => {
     const calcularTiempoTranscurrido = (horaInicio) => {
         if (!horaInicio) return '';
 
-        // Supabase guarda en UTC normalizado (Zulu time 2024-01-01T12:00:00Z)
-        // O dependiendo de configuración, pero Date() parsea correctamente ISO string
         const inicio = new Date(horaInicio).getTime();
-        const ahora = Date.now(); // UTC Timestamp local
+        const ahora = Date.now();
 
-        // Si inicio es futuro (reloj desincronizado), mostramos 0m
-        if (inicio > ahora) return '0m';
+        // Calcular diferencia en minutos
+        const diffMs = ahora - inicio;
+        const diffMinutes = Math.floor(diffMs / 1000 / 60);
 
-        const diffMinutes = Math.floor((ahora - inicio) / 1000 / 60);
-
-        if (diffMinutes < 0) return '0m';
+        // Si la diferencia es negativa (reloj cliente atrasado), mostramos '1m' si es muy reciente
+        // o 0m si realmente acaba de pasar.
+        if (diffMinutes < 0) return '1m';
+        if (diffMinutes === 0) return '1m';
         if (diffMinutes < 60) return `${diffMinutes}m`;
 
         const hours = Math.floor(diffMinutes / 60);

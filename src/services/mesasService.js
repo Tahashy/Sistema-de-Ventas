@@ -192,6 +192,7 @@ export const ocuparMesa = async (mesaId, pedidoId, meseroId) => {
     return updateEstadoMesa(mesaId, 'ocupada', {
         pedido_activo_id: pedidoId,
         mesero_asignado: meseroId,
+        // Usamos la hora actual garantizada
         hora_inicio: new Date().toISOString()
     });
 };
