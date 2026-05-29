@@ -27,6 +27,17 @@ const routes = [
   { path: '/configuracion', name: 'configuracion', element: Configuracion },
 ];
 
+const ProtectedRoute = ({ children, allowedRoles }) => {
+  const { user } = useAuth();
+  const userRole = user?.rol || 'trabajador';
+  
+  if (!allowedRoles.includes(userRole)) {
+    return <Navigate to="/" replace />;
+  }
+  
+  return children;
+};
+
 function AppLayout() {
   const { isAuthenticated, user, restaurante, logout } = useAuth();
   const { isDesktop } = useWindowSize();
@@ -143,23 +154,43 @@ function AppLayout() {
               />
               <Route
                 path="/productos"
-                element={<Productos restauranteId={restaurante.id} isAdmin={user.rol === 'admin'} />}
+                element={
+                  <ProtectedRoute allowedRoles={['admin']}>
+                    <Productos restauranteId={restaurante.id} isAdmin={user.rol === 'admin'} />
+                  </ProtectedRoute>
+                }
               />
               <Route
                 path="/pagos"
-                element={<Pagos restauranteId={restaurante.id} restaurante={restaurante} />}
+                element={
+                  <ProtectedRoute allowedRoles={['admin', 'cajero']}>
+                    <Pagos restauranteId={restaurante.id} restaurante={restaurante} />
+                  </ProtectedRoute>
+                }
               />
               <Route
                 path="/caja"
-                element={<Caja restauranteId={restaurante.id} />}
+                element={
+                  <ProtectedRoute allowedRoles={['admin', 'cajero']}>
+                    <Caja restauranteId={restaurante.id} />
+                  </ProtectedRoute>
+                }
               />
               <Route
                 path="/informes"
-                element={<Informes restauranteId={restaurante.id} />}
+                element={
+                  <ProtectedRoute allowedRoles={['admin']}>
+                    <Informes restauranteId={restaurante.id} />
+                  </ProtectedRoute>
+                }
               />
               <Route
                 path="/configuracion"
-                element={<Configuracion restauranteId={restaurante.id} />}
+                element={
+                  <ProtectedRoute allowedRoles={['admin']}>
+                    <Configuracion restauranteId={restaurante.id} />
+                  </ProtectedRoute>
+                }
               />
               {/* Redirect unknown routes to dashboard */}
               <Route path="*" element={<Navigate to="/" replace />} />

@@ -74,6 +74,19 @@ export const registrarCierre = async (datosCierre) => {
             .single();
 
         if (error) throw error;
+
+        // Disparar envío de correo asíncronamente (Vercel Serverless Function)
+        fetch('/api/enviar-cierre-caja', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                cierreId: data.id,
+                restauranteId: datosCierre.restaurante_id
+            })
+        }).catch(err => console.error("Error al disparar función de email (Vercel API):", err));
+
         return { data, error: null };
     } catch (error) {
         console.error('Error registrando cierre de caja:', error);

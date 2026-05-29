@@ -112,7 +112,10 @@ export const AuthProvider = ({ children }) => {
     logout,
     refreshRestaurant,
     isAuthenticated: !!user,
-    isAdmin: user?.rol === 'admin'
+    isAdmin: user?.rol === 'admin',
+    isCajero: user?.rol === 'cajero',
+    isMesero: user?.rol === 'mesero',
+    rol: user?.rol
   };
 
   return (

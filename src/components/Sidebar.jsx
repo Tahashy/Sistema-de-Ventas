@@ -21,16 +21,17 @@ const Sidebar = ({ activeSection, setActiveSection, onLogout, user, isAdmin, sid
   const { restaurante } = useAuth();
 
   const menuItems = [
-    { id: 'panel', label: t('panel'), icon: LayoutDashboard },
-    { id: 'pedidos', label: t('pedidos'), icon: ShoppingBag },
-    { id: 'productos', label: t('productos'), icon: Package },
-    { id: 'pagos', label: t('pagos'), icon: CreditCard, adminOnly: true },
-    { id: 'caja', label: 'Caja', icon: Calculator, adminOnly: true },
-    { id: 'informes', label: t('informes'), icon: BarChart3, adminOnly: true },
-    { id: 'configuracion', label: t('configuracion'), icon: Settings, adminOnly: true },
+    { id: 'panel', label: t('panel'), icon: LayoutDashboard, allowedRoles: ['admin', 'cajero', 'mesero', 'trabajador'] },
+    { id: 'pedidos', label: t('pedidos'), icon: ShoppingBag, allowedRoles: ['admin', 'cajero', 'mesero', 'trabajador'] },
+    { id: 'productos', label: t('productos'), icon: Package, allowedRoles: ['admin'] },
+    { id: 'pagos', label: t('pagos'), icon: CreditCard, allowedRoles: ['admin', 'cajero'] },
+    { id: 'caja', label: 'Caja', icon: Calculator, allowedRoles: ['admin', 'cajero'] },
+    { id: 'informes', label: t('informes'), icon: BarChart3, allowedRoles: ['admin'] },
+    { id: 'configuracion', label: t('configuracion'), icon: Settings, allowedRoles: ['admin'] },
   ];
 
-  const filteredItems = menuItems.filter(item => !item.adminOnly || isAdmin);
+  const userRole = user?.rol || 'trabajador';
+  const filteredItems = menuItems.filter(item => !item.allowedRoles || item.allowedRoles.includes(userRole));
 
   const handleItemClick = (itemId) => {
     setActiveSection(itemId);

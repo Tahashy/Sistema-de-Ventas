@@ -17,7 +17,8 @@ import {
     Image as ImageIcon,
     Upload,
     Type,
-    Package
+    Package,
+    AlertTriangle
 } from 'lucide-react';
 import { showToast } from '../../components/Toast';
 import {
@@ -53,15 +54,15 @@ const Configuracion = ({ restauranteId }) => {
     // -- ESTADOS: HORARIOS --
     const [horarios, setHorarios] = useState([]);
 
-    // -- ESTADOS: USUARIOS --
     const [usuarios, setUsuarios] = useState([]);
     const [showUserModal, setShowUserModal] = useState(false);
     const [editingUser, setEditingUser] = useState(null);
+    const [userToDelete, setUserToDelete] = useState(null);
     const [userForm, setUserForm] = useState({
         nombre: '',
         email: '',
         password: '',
-        rol: 'camarero'
+        rol: 'mesero'
     });
 
     // -- ESTADOS: SEGURIDAD --
@@ -149,7 +150,7 @@ const Configuracion = ({ restauranteId }) => {
             setUserForm({ nombre: user.nombre, email: user.email, password: user.password, rol: user.rol });
         } else {
             setEditingUser(null);
-            setUserForm({ nombre: '', email: '', password: '', rol: 'camarero' });
+            setUserForm({ nombre: '', email: '', password: '', rol: 'mesero' });
         }
         setShowUserModal(true);
     };
@@ -171,15 +172,19 @@ const Configuracion = ({ restauranteId }) => {
         }
     };
 
-    const handleDeleteUser = async (id) => {
-        if (window.confirm('¿Estás seguro de eliminar este usuario?')) {
-            try {
-                await deleteUser(id);
-                showToast('Usuario eliminado', 'success');
-                loadData();
-            } catch (error) {
-                showToast('Error al eliminar usuario', 'error');
-            }
+    const handleDeleteUser = (user) => {
+        setUserToDelete(user);
+    };
+
+    const confirmDeleteUser = async () => {
+        if (!userToDelete) return;
+        try {
+            await deleteUser(userToDelete.id);
+            showToast('Usuario eliminado', 'success');
+            setUserToDelete(null);
+            loadData();
+        } catch (error) {
+            showToast('Error al eliminar usuario', 'error');
         }
     };
 
@@ -374,7 +379,7 @@ const Configuracion = ({ restauranteId }) => {
                             <button onClick={() => handleOpenUserModal(u)} className="btn-icon edit">
                                 <Edit size={16} />
                             </button>
-                            <button onClick={() => handleDeleteUser(u.id)} className="btn-icon delete">
+                            <button onClick={() => handleDeleteUser(u)} className="btn-icon delete">
                                 <Trash2 size={16} />
                             </button>
                         </div>
@@ -425,8 +430,7 @@ const Configuracion = ({ restauranteId }) => {
                                     onChange={e => setUserForm({ ...userForm, rol: e.target.value })}
                                 >
                                     <option value="admin">Administrador</option>
-                                    <option value="camarero">Camarero</option>
-                                    <option value="cocinero">Cocinero</option>
+                                    <option value="mesero">Mesero</option>
                                     <option value="cajero">Cajero</option>
                                 </select>
                             </div>
@@ -435,6 +439,33 @@ const Configuracion = ({ restauranteId }) => {
                                 <button type="submit" className="btn-save">Guardar</button>
                             </div>
                         </form>
+                    </div>
+                </div>
+            )}
+
+            {/* Modal Confirmar Eliminación */}
+            {userToDelete && (
+                <div className="modal-overlay">
+                    <div className="modal-content" style={{ maxWidth: '400px', textAlign: 'center' }}>
+                        <div style={{ marginBottom: '20px', color: '#e53e3e' }}>
+                            <AlertTriangle size={48} style={{ margin: '0 auto' }} />
+                        </div>
+                        <h3>Eliminar Usuario</h3>
+                        <p style={{ color: '#4a5568', margin: '15px 0 25px' }}>
+                            ¿Estás seguro de que deseas eliminar a <strong>{userToDelete.nombre}</strong>?<br/>
+                            Esta acción no se puede deshacer.
+                        </p>
+                        <div className="modal-actions" style={{ justifyContent: 'center' }}>
+                            <button type="button" onClick={() => setUserToDelete(null)} className="btn-cancel">Cancelar</button>
+                            <button 
+                                type="button" 
+                                className="btn-save" 
+                                style={{ background: '#e53e3e', borderColor: '#e53e3e' }}
+                                onClick={confirmDeleteUser}
+                            >
+                                Sí, eliminar
+                            </button>
+                        </div>
                     </div>
                 </div>
             )}
