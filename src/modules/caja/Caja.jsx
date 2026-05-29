@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import { useCierreCaja } from './hooks/useCierreCaja';
 import ModalCierreCaja from './components/ModalCierreCaja';
+import HistorialCierres from './components/HistorialCierres';
 import { formatearMoneda, formatearFechaHora } from '../pedidos/utils/pedidoHelpers';
 import { useAuth } from '../auth/AuthContext';
 import { DollarSign, AlertCircle, Clock, CheckCircle2, TrendingUp, CreditCard, Smartphone, User } from 'lucide-react';
@@ -19,6 +20,7 @@ const Caja = ({ restauranteId }) => {
     } = useCierreCaja(restauranteId);
 
     const [isModalOpen, setIsModalOpen] = useState(false);
+    const [pestañaActiva, setPestañaActiva] = useState('actual');
 
     const handleConfirmCierre = async (montoInicialSencillo, declaradoEfectivo, declaradoTarjeta, declaradoDigital, notas) => {
         const { success, error } = await realizarCierre(montoInicialSencillo, declaradoEfectivo, declaradoTarjeta, declaradoDigital, notas);
@@ -43,7 +45,7 @@ const Caja = ({ restauranteId }) => {
 
     return (
         <div style={{ padding: '24px', maxWidth: '1000px', margin: '0 auto' }}>
-            <div style={{ marginBottom: '24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px' }}>
+            <div style={{ marginBottom: '24px', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '16px' }}>
                 <div>
                     <h1 style={{ fontSize: '1.5rem', fontWeight: 'bold', color: '#1e293b', margin: '0 0 8px 0', display: 'flex', alignItems: 'center', gap: '12px' }}>
                         Control de Caja
@@ -52,35 +54,80 @@ const Caja = ({ restauranteId }) => {
                             Cajero: {user?.nombre || user?.email || 'Usuario'}
                         </span>
                     </h1>
-                    <p style={{ color: '#64748b', margin: 0, display: 'flex', alignItems: 'center', gap: '6px' }}>
-                        <Clock size={16} /> 
-                        Contando ventas desde: {fechaInicioCalculo ? formatearFechaHora(fechaInicioCalculo) : 'No determinado'}
-                    </p>
+                    {pestañaActiva === 'actual' && (
+                        <p style={{ color: '#64748b', margin: 0, display: 'flex', alignItems: 'center', gap: '6px' }}>
+                            <Clock size={16} /> 
+                            Contando ventas desde: {fechaInicioCalculo ? formatearFechaHora(fechaInicioCalculo) : 'No determinado'}
+                        </p>
+                    )}
                 </div>
                 
+                {pestañaActiva === 'actual' && (
+                    <button
+                        onClick={() => setIsModalOpen(true)}
+                        disabled={!hayVentas || loading}
+                        style={{
+                            backgroundColor: !hayVentas ? '#cbd5e0' : '#10b981',
+                            color: 'white',
+                            border: 'none',
+                            padding: '12px 24px',
+                            borderRadius: '8px',
+                            fontWeight: 'bold',
+                            fontSize: '1rem',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '8px',
+                            cursor: !hayVentas || loading ? 'not-allowed' : 'pointer',
+                            transition: 'background-color 0.2s',
+                            boxShadow: '0 4px 6px -1px rgba(16, 185, 129, 0.2)'
+                        }}
+                    >
+                        <CheckCircle2 size={20} />
+                        {loading ? 'Procesando...' : 'Realizar Cierre de Caja'}
+                    </button>
+                )}
+            </div>
+
+            {/* Pestañas */}
+            <div style={{ display: 'flex', gap: '16px', borderBottom: '2px solid #e2e8f0', marginBottom: '24px' }}>
                 <button
-                    onClick={() => setIsModalOpen(true)}
-                    disabled={!hayVentas || loading}
+                    onClick={() => setPestañaActiva('actual')}
                     style={{
-                        backgroundColor: !hayVentas ? '#cbd5e0' : '#10b981',
-                        color: 'white',
+                        background: 'none',
                         border: 'none',
-                        padding: '12px 24px',
-                        borderRadius: '8px',
-                        fontWeight: 'bold',
+                        padding: '12px 16px',
                         fontSize: '1rem',
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '8px',
-                        cursor: !hayVentas || loading ? 'not-allowed' : 'pointer',
-                        transition: 'background-color 0.2s',
-                        boxShadow: '0 4px 6px -1px rgba(16, 185, 129, 0.2)'
+                        fontWeight: '600',
+                        color: pestañaActiva === 'actual' ? '#FF6B35' : '#64748b',
+                        borderBottom: pestañaActiva === 'actual' ? '3px solid #FF6B35' : '3px solid transparent',
+                        cursor: 'pointer',
+                        transition: 'all 0.2s',
+                        marginBottom: '-2px'
                     }}
                 >
-                    <CheckCircle2 size={20} />
-                    {loading ? 'Procesando...' : 'Realizar Cierre de Caja'}
+                    Turno Actual
+                </button>
+                <button
+                    onClick={() => setPestañaActiva('historial')}
+                    style={{
+                        background: 'none',
+                        border: 'none',
+                        padding: '12px 16px',
+                        fontSize: '1rem',
+                        fontWeight: '600',
+                        color: pestañaActiva === 'historial' ? '#FF6B35' : '#64748b',
+                        borderBottom: pestañaActiva === 'historial' ? '3px solid #FF6B35' : '3px solid transparent',
+                        cursor: 'pointer',
+                        transition: 'all 0.2s',
+                        marginBottom: '-2px'
+                    }}
+                >
+                    Historial de Cierres
                 </button>
             </div>
+
+            {pestañaActiva === 'actual' ? (
+                <>
 
             {/* Warning if no sales */}
             {!hayVentas && !loading && (
@@ -106,11 +153,25 @@ const Caja = ({ restauranteId }) => {
             <h2 style={{ fontSize: '1.1rem', color: '#475569', marginBottom: '16px' }}>Resumen del Turno Actual</h2>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '16px', marginBottom: '32px' }}>
                 <StatCard 
-                    title="Total Ventas" 
+                    title="Ingresos Brutos" 
                     value={formatearMoneda(resumenActual?.total_general || 0)} 
                     icon={TrendingUp} 
                     color="#3b82f6" 
-                    subtitle={`${resumenActual?.num_pedidos || 0} pedidos`}
+                    subtitle={`${resumenActual?.num_pedidos || 0} pedidos totales`}
+                />
+                <StatCard 
+                    title="Ventas de Comida" 
+                    value={formatearMoneda((resumenActual?.total_general || 0) - (resumenActual?.total_delivery || 0))} 
+                    icon={TrendingUp} 
+                    color="#10b981" 
+                    subtitle="Libre de delivery"
+                />
+                <StatCard 
+                    title="Pozo Repartidores" 
+                    value={formatearMoneda(resumenActual?.total_delivery || 0)} 
+                    icon={User} 
+                    color="#f59e0b" 
+                    subtitle="Pago a delivery"
                 />
                 <StatCard 
                     title="Ventas Efectivo" 
@@ -150,9 +211,12 @@ const Caja = ({ restauranteId }) => {
                             </p>
                         </div>
                         <div style={{ textAlign: 'right' }}>
-                            <p style={{ color: '#64748b', fontSize: '0.9rem', margin: '0 0 4px 0' }}>Ventas Registradas</p>
+                            <p style={{ color: '#64748b', fontSize: '0.9rem', margin: '0 0 4px 0' }}>Ingresos Brutos</p>
                             <p style={{ fontWeight: 'bold', color: '#10b981', margin: 0, fontSize: '1.1rem' }}>
                                 {formatearMoneda(ultimoCierre.total_general)}
+                            </p>
+                            <p style={{ color: '#f59e0b', fontSize: '0.8rem', margin: '4px 0 0 0' }}>
+                                Inc. {formatearMoneda(ultimoCierre.total_delivery || 0)} de Delivery
                             </p>
                         </div>
                     </div>
@@ -194,6 +258,11 @@ const Caja = ({ restauranteId }) => {
                 <div style={{ backgroundColor: 'white', padding: '24px', borderRadius: '12px', textAlign: 'center', color: '#94a3b8' }}>
                     No hay cierres de caja previos registrados.
                 </div>
+            )}
+
+                </>
+            ) : (
+                <HistorialCierres restauranteId={restauranteId} />
             )}
 
             {/* Modal de Cierre */}

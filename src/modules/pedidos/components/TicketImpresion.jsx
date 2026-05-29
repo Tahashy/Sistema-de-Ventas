@@ -120,7 +120,7 @@ const TicketImpresion = forwardRef(({ pedido, restaurante, tipoImpresion = 'clie
                                         marginTop: '2px',
                                         fontStyle: 'italic'
                                     }}>
-                                        {item.agregados.map(a => `+ ${a.nombre || a.name || ''}`).join(', ')}
+                                        {item.agregados.map(a => `+ ${a.cantidad && a.cantidad > 1 ? a.cantidad + 'x ' : ''}${a.nombre || a.name || ''}`).join(', ')}
                                     </div>
                                 )}
                             </div>

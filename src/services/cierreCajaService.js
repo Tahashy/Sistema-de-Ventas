@@ -28,6 +28,41 @@ export const obtenerUltimoCierre = async (restauranteId) => {
 };
 
 /**
+ * Obtener historial de cierres (con filtros)
+ */
+export const obtenerHistorialCierres = async (restauranteId, filtros = {}) => {
+    try {
+        let query = supabase
+            .from('cierres_caja')
+            .select(`
+                *,
+                usuarios (nombre)
+            `)
+            .eq('restaurante_id', restauranteId)
+            .order('fecha_cierre', { ascending: false });
+
+        if (filtros.fechaInicio && filtros.fechaFin) {
+            query = query
+                .gte('fecha_cierre', filtros.fechaInicio)
+                .lte('fecha_cierre', filtros.fechaFin);
+        }
+
+        query = query.limit(filtros.limite || 100);
+
+        const { data, error } = await query;
+
+        if (error) {
+            throw error;
+        }
+
+        return { data, error: null };
+    } catch (error) {
+        console.error('Error obteniendo historial de cierres:', error);
+        return { data: null, error };
+    }
+};
+
+/**
  * Registrar un nuevo cierre de caja (Inserta un nuevo registro)
  */
 export const registrarCierre = async (datosCierre) => {
@@ -67,6 +102,7 @@ export const obtenerResumenVentasCaja = async (restauranteId, fechaInicio) => {
             total_yape: estadisticas.porMetodoPago.yape || 0,
             total_plin: estadisticas.porMetodoPago.plin || 0,
             total_general: estadisticas.totalVentas || 0,
+            total_delivery: estadisticas.totalDelivery || 0,
             num_pedidos: estadisticas.cantidadPedidos || 0,
             fecha_fin_calculada: fechaFin
         };

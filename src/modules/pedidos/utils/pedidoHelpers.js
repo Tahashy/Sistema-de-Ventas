@@ -140,15 +140,10 @@ export const generarResumenWhatsApp = (pedido, restaurante) => {
     HANDS:    '\u{1F64C}', MEMO:     '\u{1F4DD}'
   };
 
-  const fmt = (d) => {
-    const f = d ? new Date(d) : new Date();
-    return `${f.toLocaleDateString()} ${f.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
-  };
-
   // 3. Bloque de Items
   const itemsText = (pedido.pedido_items || []).map(it => {
     let raw = `${E.ITEM} *${it.cantidad}x ${it.producto_nombre || it.nombre}*`;
-    if (it.agregados?.length > 0) raw += '\n' + it.agregados.map(a => `   └ + ${a.nombre}`).join('\n');
+    if (it.agregados?.length > 0) raw += '\n' + it.agregados.map(a => `   └ + ${a.cantidad && a.cantidad > 1 ? a.cantidad + 'x ' : ''}${a.nombre}`).join('\n');
     if (it.notas) raw += `\n   ${E.MEMO} ${it.notas}`;
     raw += `\n   ${E.MONEY} ${formatearMoneda(parseFloat(it.subtotal || it.precio * it.cantidad))}`;
     return raw;
@@ -168,7 +163,7 @@ export const generarResumenWhatsApp = (pedido, restaurante) => {
     `${E.ROCKET} *NUEVO PEDIDO: #${pedido.numero_pedido}* ${E.ROCKET}\n` +
     `--------------------------------\n` +
     `${E.STORE} *${restaurante.nombre || 'Restaurante'}*\n` +
-    `${E.CAL} ${fmt(pedido.created_at || pedido.fecha)}\n\n` +
+    `${E.CAL} ${formatearFechaHora(pedido.created_at || pedido.fecha)}\n\n` +
     `${E.USER} *CLIENTE*\n` +
     `*Nombre:* ${pedido.cliente_nombre || 'General'}\n` +
     (pedido.direccion_delivery ? `${E.PIN} *Dir:* ${pedido.direccion_delivery}\n` : '') +

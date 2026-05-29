@@ -35,8 +35,13 @@ const PanelLateralPedido = ({ pedido, restaurante, onClose, onCambiarEstado, onE
                 return;
             }
 
-            // OPCIÓN B: El botón general siempre imprime TODO el listado
-            const itemsAImprimir = [...(pedido.pedido_items || [])];
+            // OPCIÓN B: El botón general imprime TODO el listado para cliente, pero en cocina solo los nuevos pendientes
+            const itemsAImprimir = tipo === 'cocina' ? (pedido.pedido_items || []).filter(i => !i.impreso) : [...(pedido.pedido_items || [])];
+
+            if (tipo === 'cocina' && itemsAImprimir.length === 0) {
+                showToast('Todos los productos ya fueron impresos en cocina', 'info');
+                return;
+            }
 
             const ops = tipo === 'cocina'
                 ? impresionService.formatearComanda({ ...pedido, pedido_items: itemsAImprimir })
@@ -530,9 +535,10 @@ const PanelLateralPedido = ({ pedido, restaurante, onClose, onCambiarEstado, onE
                                     key={index}
                                     style={{
                                         padding: '14px',
-                                        background: 'white',
+                                        background: item.impreso ? '#F8FAFC' : 'white',
                                         border: '1px solid #e2e8f0',
-                                        borderRadius: '12px'
+                                        borderRadius: '12px',
+                                        opacity: item.impreso ? 0.6 : 1
                                     }}
                                 >
                                     <div style={{
@@ -546,7 +552,8 @@ const PanelLateralPedido = ({ pedido, restaurante, onClose, onCambiarEstado, onE
                                                 margin: 0,
                                                 fontSize: '15px',
                                                 fontWeight: '600',
-                                                color: '#1a202c'
+                                                color: '#1a202c',
+                                                textDecoration: item.impreso ? 'line-through' : 'none'
                                             }}>
                                                 {item.cantidad}x {item.producto_nombre}
                                             </p>
@@ -598,7 +605,7 @@ const PanelLateralPedido = ({ pedido, restaurante, onClose, onCambiarEstado, onE
                                                     color: '#10B981',
                                                     fontWeight: '500'
                                                 }}>
-                                                    + {ag.nombre} (${parseFloat(ag.precio).toFixed(2)})
+                                                    + {ag.cantidad && ag.cantidad > 1 ? ag.cantidad + 'x ' : ''}{ag.nombre} (${parseFloat(ag.precio).toFixed(2)})
                                                 </p>
                                             ))}
                                         </div>

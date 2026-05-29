@@ -836,7 +836,7 @@ const ModalNuevoPedido = ({ restauranteId, restaurante = { nombre: 'Restaurante'
                                         {item.notas && <p style={{ margin: '4px 0 0 0', fontSize: '12px', color: '#6B7280' }}>📝 {item.notas}</p>}
                                         {item.agregados?.length > 0 && (
                                             <p style={{ margin: '2px 0 0 0', fontSize: '12px', color: '#059669' }}>
-                                                + {item.agregados.map(a => a.nombre).join(', ')}
+                                                + {item.agregados.map(a => `${a.cantidad && a.cantidad > 1 ? a.cantidad + 'x ' : ''}${a.nombre}`).join(', ')}
                                             </p>
                                         )}
                                         {/* Tag Nuevo si no estaba antes */}

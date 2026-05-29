@@ -273,7 +273,7 @@ const ModalDetallePedido = ({ pedido, onClose, onCambiarEstado }) => {
                               color: '#10B981',
                               fontWeight: '500'
                             }}>
-                              + {ag.nombre} (${parseFloat(ag.precio).toFixed(2)})
+                              + {ag.cantidad && ag.cantidad > 1 ? ag.cantidad + 'x ' : ''}{ag.nombre} (${parseFloat(ag.precio).toFixed(2)})
                             </p>
                           ))}
                         </div>

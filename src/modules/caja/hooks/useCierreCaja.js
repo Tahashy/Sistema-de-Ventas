@@ -83,6 +83,7 @@ export const useCierreCaja = (restauranteId) => {
             total_yape: resumenActual.total_yape,
             total_plin: resumenActual.total_plin,
             total_general: resumenActual.total_general,
+            total_delivery: resumenActual.total_delivery || 0,
             num_pedidos: resumenActual.num_pedidos,
             
             declarado_efectivo: parseFloat(declaradoEfectivo) || 0,

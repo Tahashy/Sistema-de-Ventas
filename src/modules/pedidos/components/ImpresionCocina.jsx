@@ -99,7 +99,7 @@ const ImpresionCocina = ({ pedido }) => {
                                 }}>
                                     {item.agregados.map((agregado, idx) => (
                                         <div key={idx} style={{ marginBottom: '2px' }}>
-                                            + {agregado.nombre}
+                                            + {agregado.cantidad && agregado.cantidad > 1 ? agregado.cantidad + 'x ' : ''}{agregado.nombre}
                                         </div>
                                     ))}
                                 </div>

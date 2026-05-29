@@ -390,7 +390,7 @@ const ModalEditarPedido = ({ pedido, productos, onClose, onSuccess }) => {
                                                 </div>
                                                 {item.agregados.length > 0 && (
                                                     <span style={{ fontSize: '11px', color: '#10B981', display: 'block', marginTop: '2px' }}>
-                                                        + {item.agregados.map(a => a.nombre).join(', ')}
+                                                        + {item.agregados.map(a => `${a.cantidad && a.cantidad > 1 ? a.cantidad + 'x ' : ''}${a.nombre}`).join(', ')}
                                                     </span>
                                                 )}
                                                 <span style={{ fontSize: '12px', color: '#718096' }}>

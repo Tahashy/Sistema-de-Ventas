@@ -90,7 +90,7 @@ export const obtenerEstadisticas = async (restauranteId, fechaInicio, fechaFin) 
     try {
         const { data, error } = await supabase
             .from('pedidos')
-            .select('total, metodo_pago, tipo_servicio, propina')
+            .select('total, cargo_servicio, metodo_pago, tipo_servicio, propina')
             .eq('restaurante_id', restauranteId)
             .eq('estado', 'entregado')
             .gte('fecha_finalizacion', fechaInicio)
@@ -101,6 +101,7 @@ export const obtenerEstadisticas = async (restauranteId, fechaInicio, fechaFin) 
         // Calcular estadísticas
         const estadisticas = {
             totalVentas: 0,
+            totalDelivery: 0,
             cantidadPedidos: data.length,
             ticketPromedio: 0,
             totalPropinas: 0,
@@ -160,7 +161,9 @@ export const obtenerEstadisticas = async (restauranteId, fechaInicio, fechaFin) 
 
         data.forEach(pedido => {
             const totalPedido = parseFloat(pedido.total || 0);
+            const cargoServicio = parseFloat(pedido.cargo_servicio || 0);
             estadisticas.totalVentas += totalPedido;
+            estadisticas.totalDelivery += cargoServicio;
             estadisticas.totalPropinas += parseFloat(pedido.propina || 0);
 
             // Por método de pago (Soporte para pagos compartidos)

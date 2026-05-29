@@ -722,7 +722,8 @@ const ModalProducto = ({ producto, categorias, restauranteId, onClose, onSuccess
         stock: producto?.stock || 0,
         imagen_url: producto?.imagen_url || '',
         disponible: producto?.disponible ?? true,
-        agregados: producto?.agregados || []
+        agregados: producto?.agregados || [],
+        limite_agregados: producto?.limite_agregados || ''
     });
     const [loading, setLoading] = useState(false);
     const [uploadingImage, setUploadingImage] = useState(false);
@@ -740,7 +741,8 @@ const ModalProducto = ({ producto, categorias, restauranteId, onClose, onSuccess
             stock: producto?.stock || 0,
             imagen_url: producto?.imagen_url || '',
             disponible: producto?.disponible ?? true,
-            agregados: producto?.agregados || []
+            agregados: producto?.agregados || [],
+            limite_agregados: producto?.limite_agregados || ''
         });
         setNuevoAgregado({ nombre: '', precio: '' });
     }, [producto]);
@@ -831,7 +833,8 @@ const ModalProducto = ({ producto, categorias, restauranteId, onClose, onSuccess
                 restaurante_id: restauranteId,
                 precio: parseFloat(formData.precio),
                 costo: formData.costo ? parseFloat(formData.costo) : null,
-                stock: parseInt(formData.stock) || 0
+                stock: parseInt(formData.stock) || 0,
+                limite_agregados: formData.limite_agregados ? parseInt(formData.limite_agregados) : null
             };
 
             if (producto) {
@@ -1315,18 +1318,41 @@ const ModalProducto = ({ producto, categorias, restauranteId, onClose, onSuccess
                         borderRadius: '12px',
                         marginBottom: '24px'
                     }}>
-                        <h3 style={{
-                            margin: '0 0 16px 0',
-                            fontSize: '16px',
-                            fontWeight: '700',
-                            color: '#1a202c',
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '8px'
-                        }}>
-                            <Plus size={20} color="#FF6B35" />
-                            Agregados (opcional)
-                        </h3>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+                            <h3 style={{
+                                margin: 0,
+                                fontSize: '16px',
+                                fontWeight: '700',
+                                color: '#1a202c',
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '8px'
+                            }}>
+                                <Plus size={20} color="#FF6B35" />
+                                Agregados (opcional)
+                            </h3>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                <label style={{ fontSize: '13px', fontWeight: '600', color: '#4a5568' }}>
+                                    Límite a elegir:
+                                </label>
+                                <input
+                                    type="number"
+                                    min="0"
+                                    placeholder="Sin límite"
+                                    value={formData.limite_agregados}
+                                    onChange={(e) => setFormData({ ...formData, limite_agregados: e.target.value })}
+                                    style={{
+                                        width: '100px',
+                                        padding: '6px 10px',
+                                        border: '2px solid #e2e8f0',
+                                        borderRadius: '6px',
+                                        fontSize: '13px',
+                                        outline: 'none'
+                                    }}
+                                    title="0 o vacío significa sin límite"
+                                />
+                            </div>
+                        </div>
                         {/* Lista de Agregados */}
                         <div style={{
                             display: 'grid',

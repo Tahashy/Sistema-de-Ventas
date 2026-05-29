@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import { X, Minus, Plus, MessageSquare } from 'lucide-react';
 import { formatearMoneda } from '../utils/pedidoHelpers';
+import { showToast } from '../../../components/Toast';
 
 const ModalPersonalizarProducto = ({ producto, onClose, onConfirmar }) => {
     const [cantidad, setCantidad] = useState(1);
@@ -13,19 +14,42 @@ const ModalPersonalizarProducto = ({ producto, onClose, onConfirmar }) => {
     // Asumimos que producto.agregados es un array de objetos { nombre, precio }
     // O si vienen de otra tabla, ajustamos. Por ahora asumimos estructura simple.
     const agregadosDisponibles = producto.agregados || [];
+    const limite = producto.limite_agregados || 0;
+    const totalSeleccionados = agregadosSeleccionados.reduce((sum, a) => sum + (a.cantidad || 1), 0);
+    const reachedLimit = limite > 0 && totalSeleccionados >= limite;
 
-    const toggleAgregado = (agregado) => {
+    const agregarAgregado = (agregado) => {
+        if (reachedLimit) {
+            showToast(`Solo puedes elegir hasta ${limite} opciones para este producto.`, 'warning');
+            return;
+        }
         const existe = agregadosSeleccionados.find(a => a.nombre === agregado.nombre);
         if (existe) {
-            setAgregadosSeleccionados(agregadosSeleccionados.filter(a => a.nombre !== agregado.nombre));
+            setAgregadosSeleccionados(agregadosSeleccionados.map(a => 
+                a.nombre === agregado.nombre ? { ...a, cantidad: (a.cantidad || 1) + 1 } : a
+            ));
         } else {
-            setAgregadosSeleccionados([...agregadosSeleccionados, agregado]);
+            setAgregadosSeleccionados([...agregadosSeleccionados, { ...agregado, cantidad: 1 }]);
+        }
+    };
+
+    const restarAgregado = (agregado, e) => {
+        e.stopPropagation();
+        const existe = agregadosSeleccionados.find(a => a.nombre === agregado.nombre);
+        if (existe) {
+            if ((existe.cantidad || 1) > 1) {
+                setAgregadosSeleccionados(agregadosSeleccionados.map(a => 
+                    a.nombre === agregado.nombre ? { ...a, cantidad: a.cantidad - 1 } : a
+                ));
+            } else {
+                setAgregadosSeleccionados(agregadosSeleccionados.filter(a => a.nombre !== agregado.nombre));
+            }
         }
     };
 
     const calcularTotal = () => {
         const precioBase = parseFloat(producto.precio || 0);
-        const precioAgregados = agregadosSeleccionados.reduce((sum, a) => sum + parseFloat(a.precio || 0), 0);
+        const precioAgregados = agregadosSeleccionados.reduce((sum, a) => sum + (parseFloat(a.precio || 0) * (a.cantidad || 1)), 0);
         return (precioBase + precioAgregados) * cantidad;
     };
 
@@ -35,7 +59,7 @@ const ModalPersonalizarProducto = ({ producto, onClose, onConfirmar }) => {
             cantidad,
             notas,
             agregados: agregadosSeleccionados,
-            precioUnitarioFinal: parseFloat(producto.precio) + agregadosSeleccionados.reduce((sum, a) => sum + parseFloat(a.precio), 0),
+            precioUnitarioFinal: parseFloat(producto.precio) + agregadosSeleccionados.reduce((sum, a) => sum + (parseFloat(a.precio || 0) * (a.cantidad || 1)), 0),
             subtotal: calcularTotal()
         });
     };
@@ -94,21 +118,34 @@ const ModalPersonalizarProducto = ({ producto, onClose, onConfirmar }) => {
                     {/* Agregados */}
                     {agregadosDisponibles.length > 0 && (
                         <div style={{ marginBottom: '24px' }}>
-                            <h4 style={{ margin: '0 0 12px 0', fontSize: '1rem', color: '#4a5568' }}>
-                                Agregados
-                            </h4>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+                                <h4 style={{ margin: 0, fontSize: '1rem', color: '#4a5568' }}>
+                                    Agregados
+                                </h4>
+                                {limite > 0 && (
+                                    <span style={{ fontSize: '12px', color: '#FF6B35', fontWeight: '600', background: '#FFF5F0', padding: '4px 8px', borderRadius: '12px' }}>
+                                        Máx: {limite} ({totalSeleccionados}/{limite})
+                                    </span>
+                                )}
+                            </div>
                             <div style={{ 
                                 display: 'flex', 
                                 flexWrap: 'wrap', 
                                 gap: '10px' 
                             }}>
                                 {agregadosDisponibles.map((agregado, idx) => {
-                                    const isSelected = agregadosSeleccionados.find(a => a.nombre === agregado.nombre);
+                                    const itemSeleccionado = agregadosSeleccionados.find(a => a.nombre === agregado.nombre);
+                                    const cantidadActual = itemSeleccionado ? itemSeleccionado.cantidad || 1 : 0;
+                                    const isSelected = cantidadActual > 0;
+                                    const isDisabled = reachedLimit;
                                     return (
                                         <div
                                             key={idx}
-                                            onClick={() => toggleAgregado(agregado)}
+                                            onClick={() => {
+                                                if (!isDisabled || isSelected) agregarAgregado(agregado);
+                                            }}
                                             style={{
+                                                position: 'relative',
                                                 padding: '8px 14px', 
                                                 borderRadius: '20px',
                                                 border: `1.5px solid ${isSelected ? '#bbf7d0' : '#e2e8f0'}`,
@@ -116,16 +153,38 @@ const ModalPersonalizarProducto = ({ producto, onClose, onConfirmar }) => {
                                                 display: 'flex', 
                                                 flexDirection: 'column',
                                                 alignItems: 'center',
-                                                cursor: 'pointer', 
+                                                cursor: (isDisabled && !isSelected) ? 'not-allowed' : 'pointer', 
                                                 transition: 'all 0.2s',
-                                                minWidth: '80px',
-                                                boxShadow: isSelected ? '0 2px 4px rgba(16, 185, 129, 0.1)' : 'none'
+                                                minWidth: '90px',
+                                                boxShadow: isSelected ? '0 2px 4px rgba(16, 185, 129, 0.1)' : 'none',
+                                                opacity: (isDisabled && !isSelected) ? 0.5 : 1
                                             }}
                                         >
+                                            {isSelected && (
+                                                <div style={{
+                                                    position: 'absolute',
+                                                    top: '-6px',
+                                                    right: '-6px',
+                                                    background: '#EF4444',
+                                                    color: 'white',
+                                                    fontSize: '11px',
+                                                    fontWeight: 'bold',
+                                                    width: '20px',
+                                                    height: '20px',
+                                                    borderRadius: '50%',
+                                                    display: 'flex',
+                                                    alignItems: 'center',
+                                                    justifyContent: 'center',
+                                                    boxShadow: '0 2px 4px rgba(0,0,0,0.2)'
+                                                }}>
+                                                    x{cantidadActual}
+                                                </div>
+                                            )}
                                             <span style={{ 
                                                 fontSize: '13px',
                                                 fontWeight: isSelected ? '700' : '500', 
-                                                color: isSelected ? '#166534' : '#4a5568' 
+                                                color: isSelected ? '#166534' : '#4a5568',
+                                                marginTop: isSelected ? '4px' : '0' 
                                             }}>
                                                 {agregado.nombre}
                                             </span>
@@ -136,6 +195,26 @@ const ModalPersonalizarProducto = ({ producto, onClose, onConfirmar }) => {
                                             }}>
                                                 +{formatearMoneda(agregado.precio)}
                                             </span>
+                                            {isSelected && (
+                                                <button
+                                                    onClick={(e) => restarAgregado(agregado, e)}
+                                                    style={{
+                                                        marginTop: '6px',
+                                                        background: 'white',
+                                                        border: '1px solid #ef4444',
+                                                        color: '#ef4444',
+                                                        borderRadius: '50%',
+                                                        width: '20px',
+                                                        height: '20px',
+                                                        display: 'flex',
+                                                        alignItems: 'center',
+                                                        justifyContent: 'center',
+                                                        cursor: 'pointer'
+                                                    }}
+                                                >
+                                                    <Minus size={12} />
+                                                </button>
+                                            )}
                                         </div>
                                     );
                                 })}

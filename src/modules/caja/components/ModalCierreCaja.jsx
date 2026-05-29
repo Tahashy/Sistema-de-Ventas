@@ -131,6 +131,17 @@ const ModalCierreCaja = ({ isOpen, onClose, resumen, onConfirm }) => {
                             Por favor, ingresa los montos que has verificado físicamente y en tus reportes.
                         </p>
 
+                        {resumen.total_delivery > 0 && (
+                            <div style={{ marginBottom: '20px', padding: '12px', background: '#FEF3C7', borderLeft: '4px solid #F59E0B', borderRadius: '4px' }}>
+                                <p style={{ margin: 0, fontSize: '0.9rem', color: '#92400E', fontWeight: '600' }}>
+                                    ⚠️ Tienes {formatearMoneda(resumen.total_delivery)} acumulados por servicios de Delivery.
+                                </p>
+                                <p style={{ margin: '4px 0 0 0', fontSize: '0.85rem', color: '#92400E' }}>
+                                    Los montos esperados abajo ya incluyen este dinero recaudado. Deberás separarlo físicamente para pagarle al motorizado.
+                                </p>
+                            </div>
+                        )}
+
                         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', marginBottom: '24px' }}>
                             
                             {/* EFECTIVO */}

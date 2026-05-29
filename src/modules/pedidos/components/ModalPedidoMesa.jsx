@@ -147,8 +147,13 @@ const ModalPedidoMesa = ({
                 return;
             }
 
-            // OPCIÓN B: El botón general siempre imprime TODO el listado
-            const itemsAImprimir = [...items];
+            // Si es cocina, solo enviar los que no se han impreso
+            const itemsAImprimir = tipo === 'cocina' ? items.filter(i => !i.impreso) : [...items];
+
+            if (tipo === 'cocina' && itemsAImprimir.length === 0) {
+                showToast('Todos los productos ya fueron impresos en cocina', 'info');
+                return;
+            }
 
             const ops = tipo === 'cocina'
                 ? impresionService.formatearComanda({ ...pedido, pedido_items: itemsAImprimir })
@@ -508,15 +513,16 @@ const ModalPedidoMesa = ({
                                 {items.map((item, idx) => (
                                     <div key={idx} style={{ 
                                         padding: '14px', 
-                                        background: 'white', 
+                                        background: item.impreso ? '#f8fafc' : 'white', 
                                         border: '1px solid #f1f5f9', 
                                         borderRadius: '16px',
-                                        position: 'relative' 
+                                        position: 'relative',
+                                        opacity: item.impreso ? 0.6 : 1
                                     }}>
                                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                                             <div style={{ flex: 1 }}>
                                                 <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                                                    <p style={{ margin: 0, fontSize: '15px', fontWeight: '700', color: '#1e293b' }}>
+                                                    <p style={{ margin: 0, fontSize: '15px', fontWeight: '700', color: '#1e293b', textDecoration: item.impreso ? 'line-through' : 'none' }}>
                                                         {item.cantidad}x {item.producto_nombre}
                                                     </p>
                                                     <button
@@ -545,7 +551,7 @@ const ModalPedidoMesa = ({
                                                 {item.agregados?.length > 0 && (
                                                     <div style={{ marginTop: '6px' }}>
                                                         {item.agregados.map((ag, i) => (
-                                                            <p key={i} style={{ margin: '2px 0', fontSize: '12px', color: '#10B981', fontWeight: '600' }}>+ {ag.nombre}</p>
+                                                            <p key={i} style={{ margin: '2px 0', fontSize: '12px', color: '#10B981', fontWeight: '600' }}>+ {ag.cantidad && ag.cantidad > 1 ? ag.cantidad + 'x ' : ''}{ag.nombre}</p>
                                                         ))}
                                                     </div>
                                                 )}
