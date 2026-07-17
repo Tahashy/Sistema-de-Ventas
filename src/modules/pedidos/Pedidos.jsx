@@ -532,6 +532,7 @@ const Pedidos = ({ restauranteId, restaurante, isAdmin, userId, openNewOrderModa
                                         onEditar={editarPedido}
                                         onEliminar={eliminarPedido}
                                         onImprimir={handleImprimir}
+                                        onTogglePago={togglePago}
                                         isAdmin={isAdmin}
                                     />
                                 ))}

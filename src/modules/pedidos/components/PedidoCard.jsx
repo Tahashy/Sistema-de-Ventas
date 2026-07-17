@@ -1,11 +1,11 @@
 // src/modules/pedidos/components/PedidoCard.jsx
 
 import React, { useState } from 'react';
-import { Utensils, Package, Truck, ShoppingBag, MoreVertical, Printer, CheckCircle, Edit, Trash2, X } from 'lucide-react';
+import { Utensils, Package, Truck, ShoppingBag, MoreVertical, Printer, CheckCircle, Edit, Trash2, X, AlertCircle } from 'lucide-react';
 import ContadorTiempo from './ContadorTiempo';
 import { getEstadoColor, sanitizarNombreMesa } from '../utils/pedidoHelpers';
 
-const PedidoCard = ({ pedido, onCambiarEstado, onVerDetalle, onImprimir, onEditar, onEliminar, isAdmin, now }) => {
+const PedidoCard = ({ pedido, onCambiarEstado, onVerDetalle, onImprimir, onEditar, onEliminar, onTogglePago, isAdmin, now }) => {
   const [showMenu, setShowMenu] = useState(false);
 
   const getTipoIcon = (tipo) => {
@@ -201,21 +201,49 @@ const PedidoCard = ({ pedido, onCambiarEstado, onVerDetalle, onImprimir, onEdita
             ${parseFloat(pedido.total).toFixed(2)}
           </p>
         </div>
-        <div style={{ textAlign: 'right' }}>
-          <p style={{ margin: '0 0 4px 0', fontSize: '11px', color: '#718096' }}>
+        <div style={{ textAlign: 'right', display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '4px' }}>
+          <p style={{ margin: '0', fontSize: '11px', color: '#718096' }}>
             Pago
           </p>
-          <p style={{
-            margin: 0,
-            fontSize: '13px',
-            fontWeight: '600',
-            color: '#4a5568',
-            textTransform: 'capitalize'
-          }}>
-            {pedido.metodo_pago && (pedido.metodo_pago.startsWith('[') || pedido.metodo_pago.startsWith('{')) 
-              ? 'COMPARTIDO' 
-              : (pedido.metodo_pago ? pedido.metodo_pago.toUpperCase() : '-')}
-          </p>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <p style={{
+              margin: 0,
+              fontSize: '13px',
+              fontWeight: '600',
+              color: '#4a5568',
+              textTransform: 'capitalize'
+            }}>
+              {pedido.metodo_pago && (pedido.metodo_pago.startsWith('[') || pedido.metodo_pago.startsWith('{')) 
+                ? 'COMPARTIDO' 
+                : (pedido.metodo_pago ? pedido.metodo_pago.toUpperCase() : '-')}
+            </p>
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                if (onTogglePago) onTogglePago(pedido.id, pedido.pagado);
+              }}
+              title={pedido.pagado ? "Marcar como No Pagado" : "Marcar como Pagado"}
+              style={{
+                padding: '4px 8px',
+                borderRadius: '12px',
+                fontSize: '10px',
+                fontWeight: '700',
+                border: 'none',
+                cursor: 'pointer',
+                background: pedido.pagado ? '#DEF7EC' : '#FDE8E8',
+                color: pedido.pagado ? '#03543F' : '#9B1C1C',
+                display: 'flex', alignItems: 'center', gap: '4px',
+                transition: 'all 0.2s',
+                boxShadow: '0 1px 2px rgba(0,0,0,0.05)'
+              }}
+            >
+              {pedido.pagado ? (
+                <><CheckCircle size={10} /> PAGADO</>
+              ) : (
+                <><AlertCircle size={10} /> PENDIENTE</>
+              )}
+            </button>
+          </div>
         </div>
       </div>
 
