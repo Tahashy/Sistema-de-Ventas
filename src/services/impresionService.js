@@ -6,24 +6,48 @@ import * as qz from 'qz-tray';
 import { formatearFechaHora, sanitizarNombreMesa } from '../modules/pedidos/utils/pedidoHelpers';
 import { certificate } from './qz-certificate';
 import { privateKey } from './qz-private-key';
-import { KJUR, hextob64 } from 'jsrsasign';
+
+// Convierte PEM a ArrayBuffer para Web Crypto API
+function pemToArrayBuffer(pem) {
+    const lines = pem.split('\n').filter(l => !l.startsWith('-----'));
+    const b64 = lines.join('');
+    const binary = atob(b64);
+    const buffer = new ArrayBuffer(binary.length);
+    const view = new Uint8Array(buffer);
+    for (let i = 0; i < binary.length; i++) {
+        view[i] = binary.charCodeAt(i);
+    }
+    return buffer;
+}
 
 // Configurar certificados para impresión silenciosa
-qz.security.setCertificatePromise((resolve, reject) => {
+qz.security.setCertificatePromise((resolve) => {
     resolve(certificate);
 });
 
-qz.security.setSignatureAlgorithm("SHA512"); // Require SHA512 para mayor seguridad
+qz.security.setSignatureAlgorithm('SHA512');
 
 qz.security.setSignaturePromise((toSign) => {
-    return function(resolve, reject) {
+    return async (resolve, reject) => {
         try {
-            const pk = KJUR.crypto.KEYUTIL.getKey(privateKey);
-            const sig = new KJUR.crypto.Signature({ "alg": "SHA512withRSA" });
-            sig.init(pk);
-            sig.updateString(toSign);
-            const hex = sig.sign();
-            resolve(hextob64(hex));
+            const keyBuffer = pemToArrayBuffer(privateKey);
+            const cryptoKey = await window.crypto.subtle.importKey(
+                'pkcs8',
+                keyBuffer,
+                { name: 'RSASSA-PKCS1-v1_5', hash: 'SHA-512' },
+                false,
+                ['sign']
+            );
+            const encoder = new TextEncoder();
+            const dataBuffer = encoder.encode(toSign);
+            const signatureBuffer = await window.crypto.subtle.sign(
+                'RSASSA-PKCS1-v1_5',
+                cryptoKey,
+                dataBuffer
+            );
+            const signatureArray = Array.from(new Uint8Array(signatureBuffer));
+            const signatureB64 = btoa(String.fromCharCode(...signatureArray));
+            resolve(signatureB64);
         } catch (err) {
             console.error('Error firmando QZ Tray:', err);
             reject(err);

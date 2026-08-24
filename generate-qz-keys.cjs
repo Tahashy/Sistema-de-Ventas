@@ -11,7 +11,7 @@ cert.publicKey = keys.publicKey;
 cert.serialNumber = '01';
 cert.validity.notBefore = new Date();
 cert.validity.notAfter = new Date();
-cert.validity.notAfter.setFullYear(cert.validity.notBefore.getFullYear() + 10); // Valid for 10 years
+cert.validity.notAfter.setFullYear(cert.validity.notBefore.getFullYear() + 10);
 const attrs = [{
   name: 'commonName',
   value: 'localhost'
@@ -33,7 +33,6 @@ const attrs = [{
 }];
 cert.setSubject(attrs);
 cert.setIssuer(attrs);
-
 cert.setExtensions([{
   name: 'basicConstraints',
   cA: true
@@ -45,16 +44,19 @@ cert.setExtensions([{
   keyEncipherment: true,
   dataEncipherment: true
 }]);
-
-// self-sign certificate
 cert.sign(keys.privateKey, forge.md.sha256.create());
 console.log('Certificate created.');
 
 const pemCert = forge.pki.certificateToPem(cert);
-const pemKey = forge.pki.privateKeyToPem(keys.privateKey);
 
-fs.writeFileSync('src/services/qz-private-key.js', 'export const privateKey = `' + pemKey + '`;\n');
+// Exportar clave privada en formato PKCS#8 (requerido por Web Crypto API)
+const privateKeyPkcs8 = forge.pki.privateKeyInfoToPem(
+  forge.pki.wrapRsaPrivateKey(forge.pki.privateKeyToAsn1(keys.privateKey))
+);
+
+fs.writeFileSync('src/services/qz-private-key.js', 'export const privateKey = `' + privateKeyPkcs8 + '`;\n');
 fs.writeFileSync('src/services/qz-certificate.js', 'export const certificate = `' + pemCert + '`;\n');
 fs.writeFileSync('digital-certificate.txt', pemCert);
 
-console.log('Files generated successfully!');
+console.log('Files generated successfully in PKCS#8 format!');
+
