@@ -35,11 +35,11 @@ const PanelLateralPedido = ({ pedido, restaurante, onClose, onCambiarEstado, onE
                 return;
             }
 
-            // OPCIÓN B: El botón general imprime TODO el listado para cliente, pero en cocina solo los nuevos pendientes
-            const itemsAImprimir = tipo === 'cocina' ? (pedido.pedido_items || []).filter(i => !i.impreso) : [...(pedido.pedido_items || [])];
+            // Ahora el botón general imprime TODO el listado siempre, permitiendo re-imprimir
+            const itemsAImprimir = [...(pedido.pedido_items || [])];
 
             if (tipo === 'cocina' && itemsAImprimir.length === 0) {
-                showToast('Todos los productos ya fueron impresos en cocina', 'info');
+                showToast('No hay productos para imprimir en cocina', 'info');
                 return;
             }
 

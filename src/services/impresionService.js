@@ -4,6 +4,32 @@
  */
 import * as qz from 'qz-tray';
 import { formatearFechaHora, sanitizarNombreMesa } from '../modules/pedidos/utils/pedidoHelpers';
+import { certificate } from './qz-certificate';
+import { privateKey } from './qz-private-key';
+import { KJUR, hextob64 } from 'jsrsasign';
+
+// Configurar certificados para impresión silenciosa
+qz.security.setCertificatePromise((resolve, reject) => {
+    resolve(certificate);
+});
+
+qz.security.setSignatureAlgorithm("SHA512"); // Require SHA512 para mayor seguridad
+
+qz.security.setSignaturePromise((toSign) => {
+    return function(resolve, reject) {
+        try {
+            const pk = KJUR.crypto.KEYUTIL.getKey(privateKey);
+            const sig = new KJUR.crypto.Signature({ "alg": "SHA512withRSA" });
+            sig.init(pk);
+            sig.updateString(toSign);
+            const hex = sig.sign();
+            resolve(hextob64(hex));
+        } catch (err) {
+            console.error('Error firmando QZ Tray:', err);
+            reject(err);
+        }
+    };
+});
 
 export const impresionService = {
     /**

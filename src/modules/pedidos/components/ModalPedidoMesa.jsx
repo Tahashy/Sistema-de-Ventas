@@ -147,11 +147,11 @@ const ModalPedidoMesa = ({
                 return;
             }
 
-            // Si es cocina, solo enviar los que no se han impreso
-            const itemsAImprimir = tipo === 'cocina' ? items.filter(i => !i.impreso) : [...items];
+            // Imprimir todos los items, sin filtrar por impreso
+            const itemsAImprimir = [...items];
 
             if (tipo === 'cocina' && itemsAImprimir.length === 0) {
-                showToast('Todos los productos ya fueron impresos en cocina', 'info');
+                showToast('No hay productos para imprimir en cocina', 'info');
                 return;
             }
 

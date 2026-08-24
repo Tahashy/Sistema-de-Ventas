@@ -176,9 +176,13 @@ const ModalDetallePago = ({ pedido, restaurante, onClose }) => {
                                         <td style={{ padding: '12px', fontWeight: '600' }}>{item.cantidad}x</td>
                                         <td style={{ padding: '12px' }}>
                                             <div>{item.producto_nombre}</div>
-                                            {item.agregados && (
-                                                <div style={{ fontSize: '0.75rem', color: '#64748b' }}>
-                                                    {Object.entries(item.agregados).map(([k, v]) => `${k}: ${v}`).join(', ')}
+                                            {item.agregados && Array.isArray(item.agregados) && item.agregados.length > 0 && (
+                                                <div style={{ fontSize: '0.75rem', color: '#64748b', marginTop: '4px' }}>
+                                                    {item.agregados.map((ag, i) => (
+                                                        <div key={i}>
+                                                            + {ag.cantidad && ag.cantidad > 1 ? `${ag.cantidad}x ` : ''}{ag.nombre || ag}
+                                                        </div>
+                                                    ))}
                                                 </div>
                                             )}
                                         </td>
