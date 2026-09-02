@@ -12,7 +12,7 @@ import { generarNumeroPedido, formatearMoneda, generarResumenWhatsApp } from '..
 import ModalPersonalizarProducto from './ModalPersonalizarProducto';
 import TicketImpresion from './TicketImpresion';
 import VistaMesasSelector from './VistaMesasSelector';
-import { ocuparMesa } from '../../../services/mesasService';
+import { ocuparMesa, liberarMesa, liberarMesaPorPedido } from '../../../services/mesasService';
 import { obtenerSiguienteCorrelativo } from '../../../services/pedidosService';
 import useWindowSize from '../../../hooks/useWindowSize';
 import useImpresora from '../../../hooks/useImpresora';
@@ -188,11 +188,21 @@ const ModalNuevoPedido = ({ restauranteId, restaurante = { nombre: 'Restaurante'
                 setPagos([{ id: Date.now(), metodo: pedidoAEditar.metodo_pago || 'efectivo', monto: pedidoAEditar.total }]);
             }
 
-            // Si tiene mesa
+            // Si tiene mesa, buscar el objeto completo (con id) usando pedido_activo_id
             if (pedidoAEditar.numero_mesa) {
                 setTipoPedido('mesa');
-                // Restauramos el objeto mínimo para que la UI lo muestre y no se pierda al guardar
-                setMesaSeleccionada({ numero_mesa: pedidoAEditar.numero_mesa });
+                try {
+                    // Buscar por pedido_activo_id es 100% fiable: no hay ambigüedad de sala
+                    const { data: mesaData } = await supabase
+                        .from('mesas')
+                        .select('*')
+                        .eq('pedido_activo_id', pedidoAEditar.id)
+                        .maybeSingle();
+                    // Guardamos el objeto completo (con id) para poder liberar/ocupar al guardar
+                    setMesaSeleccionada(mesaData || { numero_mesa: pedidoAEditar.numero_mesa });
+                } catch {
+                    setMesaSeleccionada({ numero_mesa: pedidoAEditar.numero_mesa });
+                }
             }
 
         } catch (error) {
@@ -378,7 +388,18 @@ const ModalNuevoPedido = ({ restauranteId, restaurante = { nombre: 'Restaurante'
             if (errorItems) throw errorItems;
 
             if (tipoPedido === 'mesa' && mesaSeleccionada && !isEditing) {
+                // Nuevo pedido: simplemente ocupar la mesa
                 await ocuparMesa(mesaSeleccionada.id, pedidoId, userId);
+            } else if (isEditing && tipoPedido === 'mesa' && mesaSeleccionada?.id) {
+                // Edición: verificar si la mesa cambió
+                const mesaOriginal = pedidoAEditar.numero_mesa;
+                const mesaNueva = mesaSeleccionada.numero_mesa;
+                if (mesaOriginal !== mesaNueva) {
+                    // 1. Liberar la mesa anterior usando el pedido_activo_id (es único, sin ambigüedad de sala)
+                    await liberarMesaPorPedido(pedidoAEditar.id);
+                    // 2. Ocupar la nueva mesa seleccionada
+                    await ocuparMesa(mesaSeleccionada.id, pedidoId, userId);
+                }
             }
 
             showToast(isEditing ? 'Pedido actualizado' : 'Pedido creado', 'success');

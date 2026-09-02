@@ -229,18 +229,42 @@ export const impresionService = {
             // Agregados/extras del producto
             const agregados = item.agregados;
             if (agregados && Array.isArray(agregados) && agregados.length > 0) {
+                const gruposMap = {};
+                const simples = [];
+
                 agregados.forEach(ag => {
+                    if (ag.grupo_nombre) {
+                        if (!gruposMap[ag.grupo_nombre]) gruposMap[ag.grupo_nombre] = [];
+                        gruposMap[ag.grupo_nombre].push(ag);
+                    } else {
+                        simples.push(ag);
+                    }
+                });
+
+                // Imprimir grupos
+                Object.keys(gruposMap).forEach(grupoNombre => {
+                    data += char.boldOn + `  [${grupoNombre}]:\n` + char.boldOff;
+                    gruposMap[grupoNombre].forEach(ag => {
+                        const nombre = ag.nombre || ag.name || '';
+                        const cant = (ag.cantidad && ag.cantidad > 1) ? `${ag.cantidad}x ` : '';
+                        if (nombre) data += `    - ${cant}${nombre}\n`;
+                    });
+                });
+
+                // Imprimir simples
+                simples.forEach(ag => {
                     const nombre = ag.nombre || ag.name || '';
-                    if (nombre) data += `  > +${nombre}\n`;
+                    const cant = (ag.cantidad && ag.cantidad > 1) ? `${ag.cantidad}x ` : '';
+                    if (nombre) data += `  > + ${cant}${nombre}\n`;
                 });
             }
 
             data += "--------------------------------\n";
         });
 
-        // Solo mostrar notas generales si hay más de 1 ítem (no es una impresión individual)
-        const esImpresionIndividual = (pedido.pedido_items || []).length === 1;
-        if (!esImpresionIndividual && pedido.notas) {
+        // Mostrar notas generales siempre que existan y no hayan sido suprimidas explícitamente.
+        // En impresión individual, handleImprimirIndividual pasa notas: null para suprimirlas.
+        if (pedido.notas !== null && pedido.notas !== undefined && pedido.notas.trim() !== '') {
             data += "--------------------------------\n";
             data += char.center + char.boldOn + "NOTAS GENERALES:\n" + char.boldOff + char.left;
             data += char.boldOn + pedido.notas + "\n" + char.boldOff;

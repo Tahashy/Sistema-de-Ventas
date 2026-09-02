@@ -605,6 +605,7 @@ const PanelLateralPedido = ({ pedido, restaurante, onClose, onCambiarEstado, onE
                                                     color: '#10B981',
                                                     fontWeight: '500'
                                                 }}>
+                                                    {ag.grupo_nombre && <span style={{ color: '#6366F1', fontWeight: 'bold' }}>[{ag.grupo_nombre}] </span>}
                                                     + {ag.cantidad && ag.cantidad > 1 ? ag.cantidad + 'x ' : ''}{ag.nombre} (${parseFloat(ag.precio).toFixed(2)})
                                                 </p>
                                             ))}

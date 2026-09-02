@@ -117,10 +117,42 @@ const TicketImpresion = forwardRef(({ pedido, restaurante, tipoImpresion = 'clie
                                     <div style={{
                                         fontSize: isCocina ? '14px' : '11px',
                                         paddingLeft: '10px',
-                                        marginTop: '2px',
-                                        fontStyle: 'italic'
+                                        marginTop: '4px',
+                                        fontStyle: 'italic',
+                                        display: 'flex',
+                                        flexDirection: 'column',
+                                        gap: '2px'
                                     }}>
-                                        {item.agregados.map(a => `+ ${a.cantidad && a.cantidad > 1 ? a.cantidad + 'x ' : ''}${a.nombre || a.name || ''}`).join(', ')}
+                                        {(() => {
+                                            const gruposMap = {};
+                                            const simples = [];
+                                            item.agregados.forEach(ag => {
+                                                if (ag.grupo_nombre) {
+                                                    if (!gruposMap[ag.grupo_nombre]) gruposMap[ag.grupo_nombre] = [];
+                                                    gruposMap[ag.grupo_nombre].push(ag);
+                                                } else {
+                                                    simples.push(ag);
+                                                }
+                                            });
+
+                                            return (
+                                                <>
+                                                    {Object.entries(gruposMap).map(([nombreGrupo, opciones], idx) => (
+                                                        <div key={`grupo-${idx}`}>
+                                                            <span style={{ fontWeight: 'bold' }}>[{nombreGrupo}]</span>
+                                                            <div style={{ paddingLeft: '8px' }}>
+                                                                {opciones.map(a => `- ${a.cantidad && a.cantidad > 1 ? a.cantidad + 'x ' : ''}${a.nombre || a.name || ''}`).join(', ')}
+                                                            </div>
+                                                        </div>
+                                                    ))}
+                                                    {simples.length > 0 && (
+                                                        <div>
+                                                            {simples.map(a => `+ ${a.cantidad && a.cantidad > 1 ? a.cantidad + 'x ' : ''}${a.nombre || a.name || ''}`).join(', ')}
+                                                        </div>
+                                                    )}
+                                                </>
+                                            );
+                                        })()}
                                     </div>
                                 )}
                             </div>

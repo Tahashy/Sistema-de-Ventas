@@ -728,6 +728,9 @@ const ModalProducto = ({ producto, categorias, restauranteId, onClose, onSuccess
     const [loading, setLoading] = useState(false);
     const [uploadingImage, setUploadingImage] = useState(false);
     const [nuevoAgregado, setNuevoAgregado] = useState({ nombre: '', precio: '' });
+    // Estado para crear grupos de agregados
+    const [modoAgregar, setModoAgregar] = useState('simple'); // 'simple' | 'grupo'
+    const [nuevoGrupo, setNuevoGrupo] = useState({ nombre: '', limite: 1, opcionTemp: { nombre: '', precio: '' }, opciones: [] });
 
     // Reiniciar formulario cuando cambia el producto (nuevo o editar)
     useEffect(() => {
@@ -745,6 +748,8 @@ const ModalProducto = ({ producto, categorias, restauranteId, onClose, onSuccess
             limite_agregados: producto?.limite_agregados || ''
         });
         setNuevoAgregado({ nombre: '', precio: '' });
+        setNuevoGrupo({ nombre: '', limite: 1, opcionTemp: { nombre: '', precio: '' }, opciones: [] });
+        setModoAgregar('simple');
     }, [producto]);
 
     const handleImageUpload = async (e) => {
@@ -795,24 +800,45 @@ const ModalProducto = ({ producto, categorias, restauranteId, onClose, onSuccess
     };
 
     const agregarAgregado = () => {
-        if (!nuevoAgregado.nombre.trim() || !nuevoAgregado.precio) {
-            showToast('Completa todos los campos del agregado', 'error');
+        if (!nuevoAgregado.nombre.trim()) {
+            showToast('Escribe el nombre del agregado', 'error');
             return;
         }
-
+        const precio = nuevoAgregado.precio === '' ? '0' : nuevoAgregado.precio;
         const agregado = {
+            tipo: 'simple',
             id: Date.now().toString(),
             nombre: nuevoAgregado.nombre.trim(),
-            precio: parseFloat(nuevoAgregado.precio)
+            precio: parseFloat(precio)
         };
-
-        setFormData({
-            ...formData,
-            agregados: [...formData.agregados, agregado]
-        });
-
+        setFormData({ ...formData, agregados: [...formData.agregados, agregado] });
         setNuevoAgregado({ nombre: '', precio: '' });
-        showToast('Agregado añadido', 'success');
+        showToast('Opción añadida', 'success');
+    };
+
+    const agregarOpcionAGrupoTemp = () => {
+        const { nombre, precio } = nuevoGrupo.opcionTemp;
+        if (!nombre.trim()) { showToast('Escribe el nombre de la opción', 'error'); return; }
+        setNuevoGrupo(prev => ({
+            ...prev,
+            opciones: [...prev.opciones, { id: Date.now().toString(), nombre: nombre.trim(), precio: parseFloat(precio || 0) }],
+            opcionTemp: { nombre: '', precio: '' }
+        }));
+    };
+
+    const agregarGrupo = () => {
+        if (!nuevoGrupo.nombre.trim()) { showToast('El grupo necesita un nombre', 'error'); return; }
+        if (nuevoGrupo.opciones.length < 1) { showToast('Agrega al menos 1 opción al grupo', 'error'); return; }
+        const grupo = {
+            tipo: 'grupo',
+            id: Date.now().toString(),
+            nombre: nuevoGrupo.nombre.trim(),
+            limite: parseInt(nuevoGrupo.limite) || 1,
+            opciones: nuevoGrupo.opciones
+        };
+        setFormData({ ...formData, agregados: [...formData.agregados, grupo] });
+        setNuevoGrupo({ nombre: '', limite: 1, opcionTemp: { nombre: '', precio: '' }, opciones: [] });
+        showToast(`Grupo "${grupo.nombre}" añadido`, 'success');
     };
 
     const eliminarAgregado = (id) => {
@@ -1311,191 +1337,167 @@ const ModalProducto = ({ producto, categorias, restauranteId, onClose, onSuccess
                         </p>
                     </div>
 
-                    {/* Sección de Agregados */}
-                    <div style={{
-                        padding: '20px',
-                        background: '#f7fafc',
-                        borderRadius: '12px',
-                        marginBottom: '24px'
-                    }}>
+                    {/* Sección de Agregados — Grupos y Simples */}
+                    <div style={{ padding: '20px', background: '#f7fafc', borderRadius: '12px', marginBottom: '24px' }}>
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-                            <h3 style={{
-                                margin: 0,
-                                fontSize: '16px',
-                                fontWeight: '700',
-                                color: '#1a202c',
-                                display: 'flex',
-                                alignItems: 'center',
-                                gap: '8px'
-                            }}>
+                            <h3 style={{ margin: 0, fontSize: '16px', fontWeight: '700', color: '#1a202c', display: 'flex', alignItems: 'center', gap: '8px' }}>
                                 <Plus size={20} color="#FF6B35" />
-                                Agregados (opcional)
+                                Opciones y Agregados
                             </h3>
+                            {/* Límite global solo aplica a agregados simples */}
                             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                <label style={{ fontSize: '13px', fontWeight: '600', color: '#4a5568' }}>
-                                    Límite a elegir:
-                                </label>
+                                <label style={{ fontSize: '13px', fontWeight: '600', color: '#4a5568' }}>Límite simples:</label>
                                 <input
-                                    type="number"
-                                    min="0"
-                                    placeholder="Sin límite"
+                                    type="number" min="0" placeholder="Sin límite"
                                     value={formData.limite_agregados}
                                     onChange={(e) => setFormData({ ...formData, limite_agregados: e.target.value })}
-                                    style={{
-                                        width: '100px',
-                                        padding: '6px 10px',
-                                        border: '2px solid #e2e8f0',
-                                        borderRadius: '6px',
-                                        fontSize: '13px',
-                                        outline: 'none'
-                                    }}
-                                    title="0 o vacío significa sin límite"
+                                    style={{ width: '80px', padding: '6px 10px', border: '2px solid #e2e8f0', borderRadius: '6px', fontSize: '13px', outline: 'none' }}
+                                    title="Solo para opciones simples. 0 o vacío = sin límite"
                                 />
                             </div>
-                        </div>
-                        {/* Lista de Agregados */}
-                        <div style={{
-                            display: 'grid',
-                            gridTemplateColumns: window.innerWidth >= 640 ? '2fr 1fr auto' : '1fr',
-                            gap: '12px',
-                            marginBottom: '16px'
-                        }}>
-                            <input
-                                type="text"
-                                placeholder="Nombre del agregado (ej: Extra queso)"
-                                value={nuevoAgregado.nombre}
-                                onChange={(e) => setNuevoAgregado({ ...nuevoAgregado, nombre: e.target.value })}
-                                style={{
-                                    padding: '10px 14px',
-                                    border: '2px solid #e2e8f0',
-                                    borderRadius: '8px',
-                                    fontSize: '14px',
-                                    outline: 'none'
-                                }}
-                            />
-                            <div style={{ position: 'relative' }}>
-                                <span style={{
-                                    position: 'absolute',
-                                    left: '12px',
-                                    top: '50%',
-                                    transform: 'translateY(-50%)',
-                                    color: '#718096',
-                                    fontWeight: '600',
-                                    fontSize: '14px'
-                                }}>
-                                    $
-                                </span>
-                                <input
-                                    type="number"
-                                    step="0.01"
-                                    placeholder="0.00"
-                                    value={nuevoAgregado.precio}
-                                    onChange={(e) => setNuevoAgregado({ ...nuevoAgregado, precio: e.target.value })}
-                                    style={{
-                                        width: '100%',
-                                        padding: '10px 14px 10px 28px',
-                                        border: '2px solid #e2e8f0',
-                                        borderRadius: '8px',
-                                        fontSize: '14px',
-                                        outline: 'none',
-                                        boxSizing: 'border-box'
-                                    }}
-                                />
-                            </div>
-                            <button
-                                type="button"
-                                onClick={agregarAgregado}
-                                style={{
-                                    padding: '10px 16px',
-                                    background: '#10B981',
-                                    border: 'none',
-                                    borderRadius: '8px',
-                                    color: 'white',
-                                    fontSize: '14px',
-                                    fontWeight: '600',
-                                    cursor: 'pointer',
-                                    whiteSpace: 'nowrap'
-                                }}
-                            >
-                                Agregar
-                            </button>
                         </div>
 
-                        {/* Lista de agregados en formato horizontal (chips) */}
-                        {formData.agregados.length > 0 ? (
-                            <div style={{ 
-                                display: 'flex', 
-                                flexWrap: 'wrap', 
-                                gap: '8px',
-                                marginTop: '12px'
-                            }}>
-                                {formData.agregados.map(agregado => (
-                                    <div
-                                        key={agregado.id}
-                                        style={{
-                                            display: 'flex',
-                                            alignItems: 'center',
-                                            gap: '8px',
-                                            padding: '6px 12px',
-                                            background: '#f0fdf4', // Verde suave (Green 50)
-                                            borderRadius: '20px',
-                                            border: '1px solid #bbf7d0', // Green 200
-                                            boxShadow: '0 1px 2px rgba(0,0,0,0.05)',
-                                            animation: 'fadeIn 0.2s ease-in-out'
-                                        }}
-                                    >
-                                        <div style={{ display: 'flex', flexDirection: 'column' }}>
-                                            <span style={{
-                                                fontSize: '13px',
-                                                fontWeight: '600',
-                                                color: '#166534' // Green 800
-                                            }}>
-                                                {agregado.nombre}
-                                            </span>
-                                            <span style={{
-                                                fontSize: '11px',
-                                                color: '#10B981',
-                                                fontWeight: '700'
-                                            }}>
-                                                +${parseFloat(agregado.precio).toFixed(2)}
-                                            </span>
-                                        </div>
-                                        <button
-                                            type="button"
-                                            onClick={() => eliminarAgregado(agregado.id)}
-                                            title="Eliminar"
-                                            style={{
-                                                width: '20px',
-                                                height: '20px',
-                                                borderRadius: '50%',
-                                                background: '#fee2e2',
-                                                border: 'none',
-                                                color: '#ef4444',
-                                                fontSize: '12px',
-                                                fontWeight: 'bold',
-                                                display: 'flex',
-                                                alignItems: 'center',
-                                                justifyContent: 'center',
-                                                cursor: 'pointer',
-                                                transition: 'all 0.2s'
-                                            }}
-                                            onMouseOver={(e) => e.currentTarget.style.background = '#fecaca'}
-                                            onMouseOut={(e) => e.currentTarget.style.background = '#fee2e2'}
-                                        >
-                                            <X size={12} />
-                                        </button>
+                        {/* Toggle Modo */}
+                        <div style={{ display: 'flex', gap: '8px', marginBottom: '16px' }}>
+                            <button type="button" onClick={() => setModoAgregar('simple')}
+                                style={{
+                                    padding: '8px 16px', borderRadius: '8px', border: 'none', cursor: 'pointer', fontSize: '13px', fontWeight: '600',
+                                    background: modoAgregar === 'simple' ? '#10B981' : '#e2e8f0',
+                                    color: modoAgregar === 'simple' ? 'white' : '#4a5568', transition: 'all 0.2s'
+                                }}>+ Opción Simple</button>
+                            <button type="button" onClick={() => setModoAgregar('grupo')}
+                                style={{
+                                    padding: '8px 16px', borderRadius: '8px', border: 'none', cursor: 'pointer', fontSize: '13px', fontWeight: '600',
+                                    background: modoAgregar === 'grupo' ? '#6366F1' : '#e2e8f0',
+                                    color: modoAgregar === 'grupo' ? 'white' : '#4a5568', transition: 'all 0.2s'
+                                }}>+ Grupo de Opciones</button>
+                        </div>
+
+                        {/* Formulario Opción Simple */}
+                        {modoAgregar === 'simple' && (
+                            <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr auto', gap: '10px', marginBottom: '16px', alignItems: 'center' }}>
+                                <input type="text" placeholder="Nombre (ej: Extra queso)"
+                                    value={nuevoAgregado.nombre}
+                                    onChange={(e) => setNuevoAgregado({ ...nuevoAgregado, nombre: e.target.value })}
+                                    onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), agregarAgregado())}
+                                    style={{ padding: '10px 14px', border: '2px solid #e2e8f0', borderRadius: '8px', fontSize: '14px', outline: 'none' }}
+                                />
+                                <div style={{ position: 'relative' }}>
+                                    <span style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: '#718096', fontWeight: '600', fontSize: '14px' }}>$</span>
+                                    <input type="number" step="0.01" placeholder="0.00"
+                                        value={nuevoAgregado.precio}
+                                        onChange={(e) => setNuevoAgregado({ ...nuevoAgregado, precio: e.target.value })}
+                                        onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), agregarAgregado())}
+                                        style={{ width: '100%', padding: '10px 14px 10px 28px', border: '2px solid #e2e8f0', borderRadius: '8px', fontSize: '14px', outline: 'none', boxSizing: 'border-box' }}
+                                    />
+                                </div>
+                                <button type="button" onClick={agregarAgregado}
+                                    style={{ padding: '10px 16px', background: '#10B981', border: 'none', borderRadius: '8px', color: 'white', fontSize: '14px', fontWeight: '600', cursor: 'pointer', whiteSpace: 'nowrap' }}
+                                >Agregar</button>
+                            </div>
+                        )}
+
+                        {/* Formulario Grupo de Opciones */}
+                        {modoAgregar === 'grupo' && (
+                            <div style={{ background: 'white', border: '2px solid #c7d2fe', borderRadius: '12px', padding: '16px', marginBottom: '16px' }}>
+                                <p style={{ margin: '0 0 12px 0', fontSize: '12px', fontWeight: '700', color: '#6366F1', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Nuevo Grupo de Opciones</p>
+                                {/* Nombre y límite del grupo */}
+                                <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '10px', marginBottom: '12px' }}>
+                                    <input type="text" placeholder="Nombre del grupo (ej: Sabor Alitas)"
+                                        value={nuevoGrupo.nombre}
+                                        onChange={(e) => setNuevoGrupo({ ...nuevoGrupo, nombre: e.target.value })}
+                                        style={{ padding: '10px 14px', border: '2px solid #e2e8f0', borderRadius: '8px', fontSize: '14px', outline: 'none' }}
+                                    />
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                        <label style={{ fontSize: '12px', fontWeight: '600', color: '#4a5568', whiteSpace: 'nowrap' }}>Máx. a elegir:</label>
+                                        <input type="number" min="1" value={nuevoGrupo.limite}
+                                            onChange={(e) => setNuevoGrupo({ ...nuevoGrupo, limite: e.target.value })}
+                                            style={{ width: '60px', padding: '8px 10px', border: '2px solid #e2e8f0', borderRadius: '8px', fontSize: '14px', outline: 'none', textAlign: 'center' }}
+                                        />
                                     </div>
+                                </div>
+                                {/* Opciones del grupo */}
+                                <p style={{ margin: '0 0 8px 0', fontSize: '12px', fontWeight: '700', color: '#4a5568' }}>Opciones del grupo:</p>
+                                {nuevoGrupo.opciones.length > 0 && (
+                                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginBottom: '10px' }}>
+                                        {nuevoGrupo.opciones.map((op) => (
+                                            <div key={op.id} style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '4px 10px', background: '#ede9fe', border: '1px solid #c4b5fd', borderRadius: '20px' }}>
+                                                <span style={{ fontSize: '13px', fontWeight: '600', color: '#5b21b6' }}>{op.nombre}</span>
+                                                {parseFloat(op.precio) > 0 && <span style={{ fontSize: '11px', color: '#7c3aed' }}>+${parseFloat(op.precio).toFixed(2)}</span>}
+                                                <button type="button" onClick={() => setNuevoGrupo(prev => ({ ...prev, opciones: prev.opciones.filter(o => o.id !== op.id) }))}
+                                                    style={{ background: 'none', border: 'none', color: '#ef4444', cursor: 'pointer', padding: 0, display: 'flex', alignItems: 'center' }}><X size={12} /></button>
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
+                                <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr auto', gap: '8px', marginBottom: '12px' }}>
+                                    <input type="text" placeholder="Nombre opción (ej: BBQ)"
+                                        value={nuevoGrupo.opcionTemp.nombre}
+                                        onChange={(e) => setNuevoGrupo(prev => ({ ...prev, opcionTemp: { ...prev.opcionTemp, nombre: e.target.value } }))}
+                                        onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), agregarOpcionAGrupoTemp())}
+                                        style={{ padding: '8px 12px', border: '1px solid #e2e8f0', borderRadius: '8px', fontSize: '13px', outline: 'none' }}
+                                    />
+                                    <div style={{ position: 'relative' }}>
+                                        <span style={{ position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)', color: '#718096', fontSize: '13px', fontWeight: '600' }}>$</span>
+                                        <input type="number" step="0.01" placeholder="0.00"
+                                            value={nuevoGrupo.opcionTemp.precio}
+                                            onChange={(e) => setNuevoGrupo(prev => ({ ...prev, opcionTemp: { ...prev.opcionTemp, precio: e.target.value } }))}
+                                            onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), agregarOpcionAGrupoTemp())}
+                                            style={{ width: '100%', padding: '8px 12px 8px 26px', border: '1px solid #e2e8f0', borderRadius: '8px', fontSize: '13px', outline: 'none', boxSizing: 'border-box' }}
+                                        />
+                                    </div>
+                                    <button type="button" onClick={agregarOpcionAGrupoTemp}
+                                        style={{ padding: '8px 12px', background: '#6366F1', border: 'none', borderRadius: '8px', color: 'white', fontSize: '13px', fontWeight: '600', cursor: 'pointer' }}>+</button>
+                                </div>
+                                <button type="button" onClick={agregarGrupo}
+                                    style={{ width: '100%', padding: '10px', background: 'linear-gradient(135deg, #6366F1, #8B5CF6)', border: 'none', borderRadius: '10px', color: 'white', fontSize: '14px', fontWeight: '700', cursor: 'pointer' }}>
+                                    ✓ Guardar Grupo
+                                </button>
+                            </div>
+                        )}
+
+                        {/* Lista de agregados y grupos existentes */}
+                        {formData.agregados.length > 0 ? (
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginTop: '12px' }}>
+                                {formData.agregados.map(item => (
+                                    item.tipo === 'grupo' ? (
+                                        // Grupo
+                                        <div key={item.id} style={{ background: '#ede9fe', border: '1px solid #c4b5fd', borderRadius: '12px', padding: '12px 14px' }}>
+                                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                                    <span style={{ fontSize: '11px', background: '#6366F1', color: 'white', borderRadius: '6px', padding: '2px 7px', fontWeight: '700', textTransform: 'uppercase' }}>Grupo</span>
+                                                    <span style={{ fontSize: '14px', fontWeight: '700', color: '#3730a3' }}>{item.nombre}</span>
+                                                    <span style={{ fontSize: '11px', color: '#7c3aed' }}>máx. {item.limite}</span>
+                                                </div>
+                                                <button type="button" onClick={() => eliminarAgregado(item.id)}
+                                                    style={{ width: '22px', height: '22px', borderRadius: '50%', background: '#fee2e2', border: 'none', color: '#ef4444', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
+                                                    <X size={12} /></button>
+                                            </div>
+                                            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+                                                {item.opciones.map(op => (
+                                                    <span key={op.id} style={{ padding: '3px 10px', background: 'white', border: '1px solid #c4b5fd', borderRadius: '20px', fontSize: '12px', fontWeight: '600', color: '#5b21b6' }}>
+                                                        {op.nombre}{parseFloat(op.precio) > 0 ? ` +$${parseFloat(op.precio).toFixed(2)}` : ''}
+                                                    </span>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    ) : (
+                                        // Simple (o retrocompatible sin tipo)
+                                        <div key={item.id} style={{ display: 'inline-flex', alignSelf: 'flex-start', alignItems: 'center', gap: '8px', padding: '6px 12px', background: '#f0fdf4', borderRadius: '20px', border: '1px solid #bbf7d0' }}>
+                                            <div style={{ display: 'flex', flexDirection: 'column' }}>
+                                                <span style={{ fontSize: '13px', fontWeight: '600', color: '#166534' }}>{item.nombre}</span>
+                                                <span style={{ fontSize: '11px', color: '#10B981', fontWeight: '700' }}>+${parseFloat(item.precio || 0).toFixed(2)}</span>
+                                            </div>
+                                            <button type="button" onClick={() => eliminarAgregado(item.id)}
+                                                style={{ width: '20px', height: '20px', borderRadius: '50%', background: '#fee2e2', border: 'none', color: '#ef4444', fontSize: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
+                                                <X size={12} /></button>
+                                        </div>
+                                    )
                                 ))}
                             </div>
                         ) : (
-                            <p style={{
-                                margin: 0,
-                                fontSize: '13px',
-                                color: '#a0aec0',
-                                textAlign: 'center',
-                                padding: '12px'
-                            }}>
-                                No hay agregados. Puedes añadir extras como "Extra queso", "Doble carne", etc.
+                            <p style={{ margin: 0, fontSize: '13px', color: '#a0aec0', textAlign: 'center', padding: '12px' }}>
+                                Sin opciones aún. Usa "Opción Simple" para extras (ej: Extra queso) o "Grupo de Opciones" para variantes (ej: Sabor Alitas).
                             </p>
                         )}
                     </div>
