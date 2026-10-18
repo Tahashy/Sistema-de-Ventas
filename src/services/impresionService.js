@@ -197,7 +197,7 @@ export const impresionService = {
 
         let data = "";
         data += char.init;
-        data += char.center + char.boldOn + "*** COMANDA DE COCINA ***\n" + char.boldOff;
+        data += char.center + char.boldOn + (pedido.esAdicional ? "*** ADICIONAL DE COCINA ***\n" : "*** COMANDA DE COCINA ***\n") + char.boldOff;
         data += char.doubleH + "ORDEN #" + (pedido.orden_dia || '-') + char.normal + "\n";
         data += "ID Pedido: #" + pedido.numero_pedido + "\n";
         

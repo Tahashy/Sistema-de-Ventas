@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Printer, Plus, Trash2, CheckCircle2, XCircle, Wifi } from 'lucide-react';
+import { Printer, Plus, Trash2, CheckCircle2, XCircle, Wifi, Zap } from 'lucide-react';
 import { impresorasService } from '../../../services/impresorasService';
 import { impresionService } from '../../../services/impresionService';
 import { showToast } from '../../../components/Toast';
@@ -12,6 +12,20 @@ const ConfiguracionImpresoras = () => {
     const [probando, setProbando] = useState(null);
     const [qzConectado, setQzConectado] = useState(false);
     const [impresoraAEliminar, setImpresoraAEliminar] = useState(null);
+    const [autoPrintConfig, setAutoPrintConfig] = useState(impresorasService.getAutoPrintConfig());
+
+    const handleToggleAutoPrint = (activo) => {
+        const nuevaConfig = { ...autoPrintConfig, activo };
+        impresorasService.saveAutoPrintConfig(nuevaConfig);
+        setAutoPrintConfig(nuevaConfig);
+        showToast(activo ? 'Impresión automática activada' : 'Impresión automática desactivada', 'info');
+    };
+
+    const handleChangeTipoAutoPrint = (tipo) => {
+        const nuevaConfig = { ...autoPrintConfig, tipo };
+        impresorasService.saveAutoPrintConfig(nuevaConfig);
+        setAutoPrintConfig(nuevaConfig);
+    };
 
     const [formData, setFormData] = useState({
         nombre: '',
@@ -109,6 +123,110 @@ const ConfiguracionImpresoras = () => {
                 >
                     <Plus size={18} /> Agregar Impresora
                 </button>
+            </div>
+
+            {/* Panel de Impresión Automática en Tiempo Real */}
+            <div style={{
+                backgroundColor: 'white',
+                borderRadius: '12px',
+                padding: '20px',
+                marginBottom: '24px',
+                border: autoPrintConfig?.activo ? '2px solid #10B981' : '1px solid #e2e8f0',
+                boxShadow: '0 2px 4px rgba(0,0,0,0.05)',
+                transition: 'all 0.2s ease'
+            }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+                        <div style={{
+                            width: '44px',
+                            height: '44px',
+                            borderRadius: '10px',
+                            backgroundColor: autoPrintConfig?.activo ? '#ECFDF5' : '#F3F4F6',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            color: autoPrintConfig?.activo ? '#10B981' : '#9CA3AF'
+                        }}>
+                            <Zap size={24} />
+                        </div>
+                        <div>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                                <h3 style={{ margin: 0, fontSize: '17px', fontWeight: '700', color: '#1A202C' }}>
+                                    Impresión Automática (Realtime)
+                                </h3>
+                                <span style={{
+                                    fontSize: '11px',
+                                    fontWeight: '700',
+                                    padding: '3px 8px',
+                                    borderRadius: '9999px',
+                                    backgroundColor: autoPrintConfig?.activo ? '#D1FAE5' : '#F3F4F6',
+                                    color: autoPrintConfig?.activo ? '#065F46' : '#6B7280',
+                                    textTransform: 'uppercase'
+                                }}>
+                                    {autoPrintConfig?.activo ? 'Activado' : 'Desactivado'}
+                                </span>
+                            </div>
+                            <p style={{ margin: '4px 0 0 0', fontSize: '13px', color: '#718096' }}>
+                                Imprime automáticamente las comandas en cuanto se crea un pedido (desde mozos o caja) sin pulsar ningún botón.
+                            </p>
+                        </div>
+                    </div>
+
+                    <button
+                        onClick={() => handleToggleAutoPrint(!autoPrintConfig?.activo)}
+                        style={{
+                            padding: '10px 20px',
+                            backgroundColor: autoPrintConfig?.activo ? '#EF4444' : '#10B981',
+                            color: 'white',
+                            border: 'none',
+                            borderRadius: '8px',
+                            cursor: 'pointer',
+                            fontWeight: '600',
+                            fontSize: '13px',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '8px',
+                            transition: 'background-color 0.2s'
+                        }}
+                    >
+                        {autoPrintConfig?.activo ? 'Desactivar Auto-Impresión' : 'Activar Auto-Impresión'}
+                    </button>
+                </div>
+
+                {autoPrintConfig?.activo && (
+                    <div style={{ marginTop: '16px', paddingTop: '16px', borderTop: '1px solid #F3F4F6', display: 'flex', alignItems: 'center', gap: '20px', flexWrap: 'wrap' }}>
+                        <span style={{ fontSize: '13px', fontWeight: '600', color: '#4A5568' }}>¿Qué imprimir al entrar un pedido?</span>
+                        <div style={{ display: 'flex', gap: '16px', flexWrap: 'wrap' }}>
+                            <label style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '13px', cursor: 'pointer', color: '#2D3748' }}>
+                                <input
+                                    type="radio"
+                                    name="autoPrintTipo"
+                                    checked={autoPrintConfig?.tipo === 'cocina'}
+                                    onChange={() => handleChangeTipoAutoPrint('cocina')}
+                                />
+                                👨‍🍳 Solo Comanda de Cocina
+                            </label>
+                            <label style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '13px', cursor: 'pointer', color: '#2D3748' }}>
+                                <input
+                                    type="radio"
+                                    name="autoPrintTipo"
+                                    checked={autoPrintConfig?.tipo === 'caja'}
+                                    onChange={() => handleChangeTipoAutoPrint('caja')}
+                                />
+                                🧾 Solo Recibo de Caja
+                            </label>
+                            <label style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '13px', cursor: 'pointer', color: '#2D3748' }}>
+                                <input
+                                    type="radio"
+                                    name="autoPrintTipo"
+                                    checked={autoPrintConfig?.tipo === 'ambas'}
+                                    onChange={() => handleChangeTipoAutoPrint('ambas')}
+                                />
+                                🖨️ Ambas (Cocina y Caja)
+                            </label>
+                        </div>
+                    </div>
+                )}
             </div>
 
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '20px' }}>

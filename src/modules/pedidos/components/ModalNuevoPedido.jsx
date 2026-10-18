@@ -17,6 +17,7 @@ import { obtenerSiguienteCorrelativo } from '../../../services/pedidosService';
 import useWindowSize from '../../../hooks/useWindowSize';
 import useImpresora from '../../../hooks/useImpresora';
 import SelectorUbicacion from './SelectorUbicacion';
+import { imprimirPedidoAutomatico, imprimirAdicionalesAutomatico } from '../../../services/impresionAutomaticaService';
 
 // Placeholder for printing components (to be implemented/integrated)
 const PrintButton = ({ onClick, label, color = '#3B82F6' }) => (
@@ -405,6 +406,11 @@ const ModalNuevoPedido = ({ restauranteId, restaurante = { nombre: 'Restaurante'
             showToast(isEditing ? 'Pedido actualizado' : 'Pedido creado', 'success');
 
             if (isEditing) {
+                // Auto-imprimir comanda de adicionales si se agregaron nuevos platos
+                const itemsNuevos = carrito.filter(item => !item.impreso);
+                if (itemsNuevos.length > 0) {
+                    imprimirAdicionalesAutomatico({ ...pedidoAEditar, ...pedidoData }, itemsNuevos, restaurante);
+                }
                 onSuccess();
                 onClose();
             } else {
@@ -420,6 +426,15 @@ const ModalNuevoPedido = ({ restauranteId, restaurante = { nombre: 'Restaurante'
                 setPedidoConfirmado(pedidoCompleto);
                 setMostrarConfirmacion(true);
                 onSuccess(); // Refrescar lista de fondo
+
+                // Registrar de inmediato en Set global para evitar que Realtime duplique la impresión
+                if (typeof window !== 'undefined') {
+                    window.__pedidosProcesadosAuto = window.__pedidosProcesadosAuto || new Set();
+                    window.__pedidosProcesadosAuto.add(pedidoId);
+                }
+
+                // Auto-impresión inmediata local si está configurada
+                imprimirPedidoAutomatico(pedidoCompleto, restaurante);
             }
 
         } catch (error) {

@@ -6,6 +6,7 @@ import { supabase } from '../../../services/supabaseClient';
 import { showToast } from '../../../components/Toast';
 import { calcularTotales } from '../utils/pedidoHelpers';
 import ModalAgregados from './ModalAgregados';
+import { imprimirAdicionalesAutomatico } from '../../../services/impresionAutomaticaService';
 
 const ModalEditarPedido = ({ pedido, productos, onClose, onSuccess }) => {
     const [loading, setLoading] = useState(false);
@@ -177,6 +178,12 @@ const ModalEditarPedido = ({ pedido, productos, onClose, onSuccess }) => {
                 .insert(items);
 
             if (itemsError) throw itemsError;
+
+            // Auto-imprimir comanda de adicionales si se agregaron nuevos platos/items
+            const itemsNuevos = carrito.filter(item => item.esNuevo);
+            if (itemsNuevos.length > 0) {
+                imprimirAdicionalesAutomatico(pedido, itemsNuevos);
+            }
 
             showToast('Pedido actualizado exitosamente', 'success');
             onSuccess();

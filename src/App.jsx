@@ -15,6 +15,7 @@ import Informes from './modules/informes/Informes';
 import Configuracion from './modules/configuracion/Configuracion';
 import useWindowSize from './hooks/useWindowSize';
 import { LanguageProvider } from './modules/configuracion/LanguageContext';
+import useImpresionAutomatica from './hooks/useImpresionAutomatica';
 
 // Route configuration
 const routes = [
@@ -43,6 +44,9 @@ function AppLayout() {
   const { isDesktop } = useWindowSize();
   const navigate = useNavigate();
   const location = useLocation();
+
+  // Escuchar nuevos pedidos en tiempo real e imprimir automáticamente si está habilitado localmente
+  useImpresionAutomatica(restaurante?.id, restaurante);
 
   const [darkMode, setDarkMode] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);

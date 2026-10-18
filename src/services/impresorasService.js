@@ -67,11 +67,47 @@ export const impresorasService = {
 
     getImpresorasPorTipo: (tipoBuscado) => {
         return impresorasService.getImpresoras().filter(i => {
-            if (!i.activo) return false;
+            // Solo descartar si está explícitamente inactiva
+            if (i.activo === false) return false;
+
+            // Si tipos es array, verificar si incluye el tipo buscado
             if (i.tipos && Array.isArray(i.tipos)) {
                 return i.tipos.includes(tipoBuscado);
             }
-            return i.tipo === tipoBuscado;
+            // Si tiene tipo como string
+            if (i.tipo) {
+                return i.tipo === tipoBuscado;
+            }
+            // Si no tiene tipo especificado, asumimos cocina por defecto
+            return tipoBuscado === 'cocina';
         });
+    },
+
+    /**
+     * Obtiene la configuración de impresión automática en tiempo real
+     */
+    getAutoPrintConfig: () => {
+        try {
+            const data = localStorage.getItem('mirkos_autoprint');
+            return data ? JSON.parse(data) : { activo: false, tipo: 'cocina' };
+        } catch (error) {
+            console.error('Error cargando configuración de auto-impresión:', error);
+            return { activo: false, tipo: 'cocina' };
+        }
+    },
+
+    /**
+     * Guarda la configuración de impresión automática en tiempo real
+     */
+    saveAutoPrintConfig: (config) => {
+        try {
+            localStorage.setItem('mirkos_autoprint', JSON.stringify(config));
+            // Disparar evento de storage para que otros componentes/hooks se enteren si es necesario
+            window.dispatchEvent(new Event('autoprint_config_changed'));
+            return true;
+        } catch (error) {
+            console.error('Error guardando configuración de auto-impresión:', error);
+            return false;
+        }
     }
 };
